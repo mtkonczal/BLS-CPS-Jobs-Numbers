@@ -1,0 +1,16 @@
+# This script does some data analysis on jobs.
+# Written by: Mike Konczal
+# Last Updated: 3-12-2022
+
+setwd("/Users/mkonczal/Documents/GitHub/BLS-CPS-Jobs-Numbers/")
+library(tidyverse)
+library(ggtext)
+
+##### SET UP SOME THINGS #####
+#source(file = "1_load_cps_jobs_data.R")
+#load("data/cps_jobs_data.RData")
+
+
+source(file = "2_1_epop_change.R")
+source(file = "2_2_lfp_change.R")
+source(file = "2_3_cbo_projections.R")
