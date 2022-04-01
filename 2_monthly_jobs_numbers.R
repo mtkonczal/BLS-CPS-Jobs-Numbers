@@ -7,9 +7,11 @@ library(tidyverse)
 library(ggtext)
 
 ##### SET UP SOME THINGS #####
-#source(file = "1_load_cps_jobs_data.R")
-#load("data/cps_jobs_data.RData")
+source(file = "1_a_load_bls_cps_jobs_data.R")
+source(file = "1_b_load_bls_ces_jobs_data.R")
 
+#load("data/cps_jobs_data.RData")
+#load("data/ces_data.RData")
 
 source(file = "2_1_epop_change.R")
 source(file = "2_2_lfp_change.R")

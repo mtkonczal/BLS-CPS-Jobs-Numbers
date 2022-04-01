@@ -42,6 +42,6 @@ cps_jobs_data <- inner_join(cps_jobs_data, cps_jobs_series, by = "series_id") %>
   select(-c("footnote_codes.x", "footnote_codes.y", "begin_year", "begin_period", "end_year", "end_period"))
 
 
-save(cps_jobs_data, file = "data/cps_jobs_data.RData")
+#save(cps_jobs_data, file = "data/cps_jobs_data.RData")
 
 ###### END DATA IMPORT #######
