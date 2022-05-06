@@ -10,6 +10,7 @@ library(ggrepel)
 ##### SET UP SOME THINGS #####
 #source(file = "1_load_cps_jobs_data.R")
 #load("data/cps_jobs_data.RData")
+#load("data/ces_data.RData")
 
 cbop <- read_csv("data/CBO_prepandemic_labor_projections.csv") %>% #filter(series_title != "(Seas) Employment Level") %>%
   filter(date <= "2022-05-01")

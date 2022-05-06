@@ -39,5 +39,5 @@ ces_data <- inner_join(ces_data, ces_series, by = c("series_id"))
 ces_data <- select(ces_data, -c("footnote_codes.x", "footnote_codes.y", "begin_year", "begin_period", "end_year", "end_period"))
 
 
-#save(ces_data, file = "data/ces_data.RData")
+save(ces_data, file = "data/ces_data.RData")
 ######################################################################

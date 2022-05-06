@@ -80,7 +80,7 @@ ggplot(lfp) +
        Data: BLS, CPS. Seasonally adjusted. Author's calculations. Mike Konczal, Roosevelt Institute") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), strip.background = element_blank(), panel.background = element_blank()) +
   theme(panel.background = element_blank(), axis.line.y = element_blank()) +
-  geom_text(aes(x=g2_series_title, y=display_value, label=(round(display_value, 2))), nudge_y = 0.004, nudge_x = 0.05, color = "#01579B", check_overlap = TRUE) +
+  geom_text(aes(x=g2_series_title, y=display_value, label=(round(display_value, 3))), nudge_y = 0.004, nudge_x = 0.05, color = "#01579B", check_overlap = TRUE) +
   geom_text(aes(x=g2_series_title, y=value_lagm, label=(round(value_lagm, 2))), nudge_y = -0.004, nudge_x = 0.05, color = "#bc5090", check_overlap = TRUE) +
   theme(plot.caption = element_text(size=14, margin=margin(19,0,11,0)))
 ggsave("graphics/LFP_race.png", width = 19, height=10.68, dpi="retina")
