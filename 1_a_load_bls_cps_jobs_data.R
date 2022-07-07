@@ -21,7 +21,6 @@ cps_jobs_data <- cps_jobs_data %>%
   clean_names()
 # Right now R doesn't handle dates before 1970 straightforward, so as a workaround,
 # and since we don't need them, I'm just deleting them. Will fix in future version.
-cps_jobs_data <- filter(cps_jobs_data, year > 2000)
 cps_jobs_data <- filter(cps_jobs_data, period != "M13")
 cps_jobs_data$series_id <- str_trim(cps_jobs_data$series_id)
 cps_jobs_data$value <- as.numeric(cps_jobs_data$value)

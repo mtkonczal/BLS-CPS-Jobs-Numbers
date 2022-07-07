@@ -19,11 +19,10 @@ ces_data <- ces_data %>%
   clean_names()
 # Right now R doesn't handle dates before 1970 straightforward, so as a workaround,
 # and since we don't need them, I'm just deleting them. Will fix in future version.
-ces_data <- filter(ces_data, year > 2000)
 ces_data$series_id <- str_trim(ces_data$series_id)
 ces_data$value <- as.numeric(ces_data$value)
-ces_data$date <- paste(substr(ces_data$period, 2,3), "01", substr(ces_data$year, 3, 4), sep="/")
-ces_data$date <- as.Date(ces_data$date, "%m/%d/%y")
+ces_data$date <- paste(substr(ces_data$period, 2,3), "01", ces_data$year, sep="/")
+ces_data$date <- as.Date(ces_data$date, "%m/%d/%Y")
 
 ces_series <- read_delim(file = "https://download.bls.gov/pub/time.series/ce/ce.series")
 ces_series <- ces_series %>% 

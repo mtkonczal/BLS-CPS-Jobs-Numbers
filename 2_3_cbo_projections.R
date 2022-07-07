@@ -68,7 +68,7 @@ ggplot(cbot, aes(date, value, color=source, linetype=source, size=source)) + geo
        caption="Household and establishment refer to the respective surveys. Seasonally adjusted.\nDotted red line is CBO quarterly 10-Year Economic Projections, February 2021.\nAuthor's calculations. Mike Konczal, Roosevelt Institute",
        x="", y="") +
   theme(strip.text = element_text(face = "bold", color = "black", hjust = 0.5, size = 21),
-        plot.title = element_text(size = 25, face="bold", hjust = 0.5), plot.subtitle = element_text(size=20, margin=margin(9,0,15,0),lineheight=1.05),
+        plot.title = element_text(size = 25, face="bold"), plot.subtitle = element_text(size=20, margin=margin(9,0,15,0),lineheight=1.05),
         plot.caption = element_text(size=14, margin=margin(19,0,11,0), lineheight=1.05),
         plot.title.position = "plot") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), strip.background = element_blank()) +

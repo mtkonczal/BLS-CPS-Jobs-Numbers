@@ -5,6 +5,7 @@
 setwd("/Users/mkonczal/Documents/GitHub/BLS-CPS-Jobs-Numbers/")
 library(tidyverse)
 library(ggtext)
+library(lubridate)
 
 ##### SET UP SOME THINGS #####
 #source(file = "1_load_cps_jobs_data.R")
@@ -12,8 +13,18 @@ library(ggtext)
 
 ##### FIRST GRAPHIC: EPOP BY GROUPS #####
 
-MonthsToLag <- 12
-epop <- cps_jobs_data %>% filter(seasonal == "S") %>% filter(periodicity_code == "M") %>% filter(grepl("Employment-Population Ratio", series_title))
+# Filter out EPOP categories
+epop <- cps_jobs_data %>% filter(seasonal == "S") %>% filter(periodicity_code == "M") %>%
+  filter(grepl("Employment-Population Ratio", series_title))
+
+# We are now setting this to a specific date, January 2021 here, rather than X months ago.
+# Uncomment "MonthsToLag" with a numerical value to go back to X months ago.
+LagMonth <- as.Date("2021-01-01")
+MaxMonth <- epop %>% select(date) %>% filter(date == max(date)) %>% distinct(date) %>% pull(date)
+MonthsToLag <- interval(LagMonth, MaxMonth) %/% months(1)
+#MonthsToLag <- 12
+
+
 
 epop <- epop %>%
   group_by(series_id) %>%  arrange(date) %>%
@@ -27,10 +38,10 @@ epop <- epop %>%
   mutate(lagged_date_lagm = lag(date, MonthsToLag)) %>%
   filter(date == max(date)) %>% ungroup()
 
-# WRITE OUT THE SERIES ID WE WANT
-graphic_series <- c("LNS12300000","LNS12300001","LNS12300002","LNS12300003","LNS12300006","LNS12300009","LNS12300024","LNS12300036","LNS12300048","LNS12300060",
-                    "LNS12300089","LNS12300091","LNS12300093","LNS12324887","LNS12327659","LNS12327660","LNS12327662","LNS12327689","LNS12300004",
-                    "LNS12300005","LNS12300007","LNS12324230", "LNS12300008")
+# Write out the series we want
+graphic_series <- c("LNS12300000","LNS12300001","LNS12300002","LNS12300003","LNS12300006","LNS12300009","LNS12300036","LNS12300060",
+                    "LNS12300089","LNS12300091","LNS12300093","LNS12327659","LNS12327660","LNS12327662","LNS12327689","LNS12300004",
+                    "LNS12300005","LNS12300007","LNS12324230", "LNS12300008", "LNS12300012")
 
 epop <- epop %>% filter(series_id %in% graphic_series)
 
@@ -67,8 +78,8 @@ ggplot(epop) +
   coord_flip()+
   theme_classic() +
   theme(panel.grid.major.x = element_blank(),
-        plot.title = element_markdown(size = 35, hjust = 0.5),
-        plot.subtitle = element_markdown(size = 28, margin=margin(9,0,15,0))) +
+        plot.title = element_markdown(size = 30, face="bold"),
+        plot.subtitle = element_markdown(size = 20, margin=margin(9,0,15,0))) +
   theme(
     panel.grid = element_blank(),
     panel.border = element_blank(),
