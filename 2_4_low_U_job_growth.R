@@ -75,24 +75,25 @@ percent_positive <- JG %>% filter(date > "1980-01-01") %>%
 percent_positive <- 100*round(as.numeric(percent_positive),2)
 percent_positive <- paste(percent_positive, " percent", sep="")
 
-title2 <- paste("Even as It Slows, ", maxdate, " Job Growth is Higher Than ", percent_higher, " Of Months Since 1980", sep="")
+title2 <- paste("A Remarkable Month, ", maxdate, " Job Growth is Higher Than ", percent_higher, " Of Months Since 1980", sep="")
 subtitleNumbers2 <- paste("Monthly CES employment growth as a percent of total employment; Line equals ", maxdate, "'s ", round(current_ER*100,2), " percent value", sep="")
 
 JG %>% filter(date > "1980-01-01") %>%
   filter(date < "2020-04-01" | date > "2020-07-01") %>%
   ggplot(aes(date, job_growth_rate, color="#01579B")) + geom_point(size=2) + theme_classic() +
-  geom_hline(yintercept = current_ER, linetype="longdash", color="#01579B") +
+  geom_hline(yintercept = current_ER, size=2, linetype="longdash", color="darkred") +
   theme(legend.position='none', legend.title = element_blank()) +
   scale_color_manual(values = c("#01579B", "#bc5090")) +
   labs(title=title2,
        subtitle=subtitleNumbers2,
-       caption=paste("April to July 2020 Excluded as Graphical Outliers. The value is ", percent_positive, " if only positive job growth months are included. CES Employment, Author's Calculations. Mike Konczal, Roosevelt Institute", sep=""),
+       caption=paste("April to July 2020 Excluded as graphical outliers. The value is ", percent_positive, " if only positive job growth months are included. CES Employment, Author's Calculations. Mike Konczal, Roosevelt Institute", sep=""),
        x="", y="Job Growth as a Percent of Total Jobs") +
   theme(plot.title = element_text(size = 30, face="bold"), plot.subtitle = element_text(size=20, margin=margin(9,0,15,0)),
         plot.caption = element_text(size=12),
         plot.title.position = "plot") +
   theme(axis.text=element_text(size=20), legend.text.align = 0, legend.background = element_blank(), legend.title = element_blank(),
         legend.key = element_blank(), legend.text = element_text(size=15, color="#222222"), panel.background = element_blank()) +
-  scale_y_continuous(labels = percent)
+  scale_y_continuous(labels = percent) +
+  geom_point(aes(date,display_valueAll), shape = 21, color="black", fill="darkred", size=5)
 
 ggsave("graphics/JG_1980.png", width = 19, height=10.68, dpi="retina")

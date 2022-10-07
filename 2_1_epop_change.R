@@ -19,10 +19,10 @@ epop <- cps_jobs_data %>% filter(seasonal == "S") %>% filter(periodicity_code ==
 
 # We are now setting this to a specific date, January 2021 here, rather than X months ago.
 # Uncomment "MonthsToLag" with a numerical value to go back to X months ago.
-LagMonth <- as.Date("2021-01-01")
+LagMonth <- as.Date("2022-01-01")
 MaxMonth <- epop %>% select(date) %>% filter(date == max(date)) %>% distinct(date) %>% pull(date)
 MonthsToLag <- interval(LagMonth, MaxMonth) %/% months(1)
-#MonthsToLag <- 12
+MonthsToLag <- 12
 
 
 
@@ -86,7 +86,7 @@ ggplot(epop) +
     plot.title.position = "plot",
     axis.text = element_text(size = 20),
     axis.ticks.y = element_blank()) +
-  labs(x="",y="", subtitle=Full_Title, title="Employment Increasing Across All Categories, Approaching Pre-Pandemic Rate") +
+  labs(x="",y="", subtitle=Full_Title, title="Employment-to-Population Ratio Increased in August, 25-54 at Pre-Pandemic Levels") +
   geom_hline(yintercept=1, color = "grey", alpha=0.4, linetype="dashed") +
   labs(caption = "The category equals 1.0 when it returns to its pre-pandemic rate.
        Pre-pandemic rate is defined as the average of the category's monthly EPOP ratio from Nov 19 to Jan 20.
@@ -94,6 +94,51 @@ ggplot(epop) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), strip.background = element_blank(), panel.background = element_blank()) +
   theme(panel.background = element_blank(), axis.line.y = element_blank()) +
   geom_text(aes(x=g2_series_title, y=display_value, label=(round(display_value, 3))), nudge_y = 0.005, nudge_x = 0.05, color = "#01579B", check_overlap = TRUE, size=6) +
-  geom_text(aes(x=g2_series_title, y=value_lagm, label=(round(value_lagm, 2))), nudge_y = -0.005, nudge_x = 0.05, color = "#bc5090", check_overlap = TRUE, size=6) +
+#  geom_text(aes(x=g2_series_title, y=value_lagm, label=(round(value_lagm, 2))), nudge_y = -0.005, nudge_x = 0.05, color = "#bc5090", check_overlap = TRUE, size=6) +
   theme(plot.caption = element_text(size=14, lineheight=1.05, margin=margin(19,0,11,0)))
 ggsave("graphics/EPOP_race.png", width = 19, height=10.68, dpi="retina")
+
+
+####
+
+epop2
+
+GR_compare <- cps_jobs_data %>% filter(series_id == "LNS12300060") %>%
+  mutate(value = value/100) %>%
+  filter(date > "2000-01-01") %>%
+  mutate(val_org1 = value[date=="2020-01-01"]) %>%
+  mutate(val_org2 = value[date=="2019-12-01"]) %>%
+  mutate(val_org3 = value[date=="2019-11-01"]) %>%
+  mutate(val_org = (val_org1+val_org2+val_org3)/3) %>%
+  mutate(GRval_org1 = value[date=="2008-01-01"]) %>%
+  mutate(GRval_org2 = value[date=="2007-12-01"]) %>%
+  mutate(GRval_org3 = value[date=="2007-11-01"]) %>%
+  mutate(GRval_org = (GRval_org1+GRval_org2+GRval_org3)/3)
+
+GR_compare$val_org
+GR_compare <- GR_compare %>% mutate(GRval_org = GRval_org*(date >= "2008-01-01" & date <= "2019-01-01"))
+GR_compare$GRval_org <- na_if(GR_compare$GRval_org, 0)
+GR_compare <- GR_compare %>% mutate(val_org = val_org*(date > "2020-01-01"))
+GR_compare$val_org <- na_if(GR_compare$val_org, 0)
+
+GR_compare %>%
+  ggplot(aes(date,value)) + geom_line() +
+  geom_line(aes(date,GRval_org), color="darkred") +
+  geom_line(aes(date,val_org), color="darkred") + theme_classic() +
+  scale_y_continuous(labels = percent) +
+  labs(title="Prime-Age EPOP Recovered in 31 Months in This Recovery, Compared to 133 in the Great Recession",
+       caption=paste("CPS, Seasonally Adjusted, Author's Calculations. Mike Konczal, Roosevelt Institute"),
+       x="", y="Employment to Population Ratio") +
+  theme(plot.title = element_text(size = 25),
+        plot.caption = element_text(size=12),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(size=20, margin=ggplot2::margin(9,0,15,0),lineheight=1.05)) +
+  theme(axis.text = element_text(size=20), axis.title = element_text(size=20),
+        legend.text.align = 0, legend.background = element_blank(), legend.title = element_blank(),
+        legend.key = element_blank(),
+        legend.text = element_text(size=15, color="#222222"), panel.background = element_blank())
+  
+ggsave("graphics/GR_EPOP_race.png", width = 19, height=10.68, dpi="retina")
+
+GR_compare %>% select(GRval_org) %>% filter(!is.na(GRval_org)) %>% summarize(n())
+GR_compare %>% select(val_org) %>% filter(!is.na(val_org)) %>% summarize(n())
