@@ -30,12 +30,14 @@ ces_series$series_id <- str_trim(ces_series$series_id)
 
 ces_data_type <- read_delim(file = "https://download.bls.gov/pub/time.series/ce/ce.datatype")
 ces_super_sector <- read_delim(file = "https://download.bls.gov/pub/time.series/ce/ce.supersector")
+ces_industry <- read_delim(file = "https://download.bls.gov/pub/time.series/ce/ce.industry")
 ces_series <- inner_join(ces_series, ces_data_type, by = "data_type_code")
 ces_series <- inner_join(ces_series, ces_super_sector, by = "supersector_code")
+ces_series <- inner_join(ces_series, ces_industry, by = "industry_code")
 
 ces_data <- inner_join(ces_data, ces_series, by = c("series_id"))
-ces_data <- select(ces_data, -c("footnote_codes.x", "footnote_codes.y", "begin_year", "begin_period", "end_year", "end_period"))
+#ces_data <- select(ces_data, -c("footnote_codes.x", "footnote_codes.y", "begin_year", "begin_period", "end_year", "end_period"))
 
-
+rm(ces_series, ces_industry, ces_super_sector, ces_data_type)
 #save(ces_data, file = "data/ces_data.RData")
 ######################################################################

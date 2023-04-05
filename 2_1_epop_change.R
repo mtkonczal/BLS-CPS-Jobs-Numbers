@@ -72,9 +72,9 @@ LaggedYear <- format(epop$lagged_date_lagm[1], "%Y")
 Full_Title <- paste("Employment-Population Ratio as a Proportion of Pre-Pandemic Rate, <span style = 'color:#bc5090;'>", LaggedMonth, " ", LaggedYear, "</span> and <span style = 'color:#01579B;'>", MaxMonth, " ", MaxYear, "</span>", sep="")
 
 ggplot(epop) +
-  geom_segment( aes(x=g2_series_title, xend=g2_series_title, y=value_1m, yend=value_lagm), color="grey") +
+#  geom_segment( aes(x=g2_series_title, xend=g2_series_title, y=value_1m, yend=value_lagm), color="grey") +
   geom_point( aes(x=g2_series_title, y=value_1m), color="#01579B", size=5 ) +
-  geom_point( aes(x=g2_series_title, y=value_lagm), color="#bc5090", size=5 ) +
+#  geom_point( aes(x=g2_series_title, y=value_lagm), color="#bc5090", size=5 ) +
   coord_flip()+
   theme_classic() +
   theme(panel.grid.major.x = element_blank(),
@@ -87,7 +87,7 @@ ggplot(epop) +
     axis.text = element_text(size = 20),
     axis.ticks.y = element_blank()) +
   labs(x="",y="", subtitle=Full_Title, title="Employment-to-Population Ratio Increased in August, 25-54 at Pre-Pandemic Levels") +
-  geom_hline(yintercept=1, color = "grey", alpha=0.4, linetype="dashed") +
+  geom_hline(yintercept=1, color = "black", alpha=0.4, linetype="dashed") +
   labs(caption = "The category equals 1.0 when it returns to its pre-pandemic rate.
        Pre-pandemic rate is defined as the average of the category's monthly EPOP ratio from Nov 19 to Jan 20.
        Data: BLS, CPS. Seasonally adjusted. Author's calculations. Mike Konczal, Roosevelt Institute") +
@@ -98,10 +98,23 @@ ggplot(epop) +
   theme(plot.caption = element_text(size=14, lineheight=1.05, margin=margin(19,0,11,0)))
 ggsave("graphics/EPOP_race.png", width = 19, height=10.68, dpi="retina")
 
+epop %>% mutate(g2_series_title = fct_reorder(g2_series_title, value_1m)) %>%
+ggplot(aes(x=g2_series_title, y=value_1m, label=round(value_1m,3))) + geom_bar(stat="identity",size=0) +
+theme_lass + coord_flip() +
+scale_y_continuous(limits=c(0.8,1.2),oob = rescale_none) +
+  labs(caption = "The category equals 1.0 when it returns to its pre-pandemic rate.
+       Pre-pandemic rate is average monthly EPOP ratio from Nov 19 to Jan 20 for group.
+       Data: BLS, CPS. Seasonally adjusted. Author's calculations. Mike Konczal, Roosevelt Institute",
+       title="Feb 2023 Employment-to-Population Rate Compared to Prepandemic Baseline") +
+  geom_hline(yintercept=1, color="white",alpha=0.4) +
+  geom_text(    hjust = -0.5, size = 3,
+                position = position_dodge(width = 1)) +
+  theme(plot.title = element_text(size=14))
+  
+ggsave("graphics/EPOP_race2.png", width = 12, height=6.75, dpi="retina")
+  
 
 ####
-
-epop2
 
 GR_compare <- cps_jobs_data %>% filter(series_id == "LNS12300060") %>%
   mutate(value = value/100) %>%
