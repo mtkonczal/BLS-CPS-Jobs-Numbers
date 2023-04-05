@@ -115,36 +115,6 @@ double_jobs_graphic <- ces_data %>% filter(seasonal == "S", (display_level == 2)
 double_jobs_graphic %>%
   mutate(industry_name = reorder_within(industry_name, difference, months_category)) %>%
   
-  ggplot(aes(industry_name, difference, label=difference_label, color=positive)) +
-  geom_point(size=9) +
-  geom_segment(aes(x=industry_name, 
-                   xend=industry_name, 
-                   y=0, 
-                   yend=difference)) +
-  scale_x_reordered() +
-  facet_wrap( ~ months_category, scales = "free_y", ncol = 1) + coord_flip() +
-  theme_lass +
-  theme(panel.grid.major.x = element_line(size=0.5)) +
-  theme(panel.grid.major.y = element_line(size=0)) +
-  theme(plot.title.position = "plot") +
-  labs(y = NULL,
-       x = NULL,
-       title = "Last Month Versus Last Six Months TKTKTK",
-       subtitle = "Need to TEST TK.",
-       caption ="BLS, CES, seasonally adjusted values. Author's calculation. Mike Konczal") +
-  theme(axis.text.y = element_text(size=12, face="plain"),
-        legend.position = c(0.75,0.5)) +
-  geom_text(color="white", size=5) +
-  scale_y_continuous(position = "right") +
-  theme(legend.position = "none")
-
-
-ggsave("graphics/sectors_employment_differences.png",  width = 8, height=8, dpi="retina")
-
-
-double_jobs_graphic %>%
-  mutate(industry_name = reorder_within(industry_name, difference, months_category)) %>%
-  
   ggplot(aes(industry_name, difference, label=difference_label, fill=positive)) +
   geom_col(size=0) +
   scale_x_reordered() +
