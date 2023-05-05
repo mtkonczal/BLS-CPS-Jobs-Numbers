@@ -27,6 +27,125 @@ b <-cps_jobs_data %>% filter(series_title=="(Seas) Civilian Labor Force Level", 
 
 unique(b$year)
 
-cpi_data %>% filter(item_name == "All items less food, shelter, energy, and used cars and trucks", seasonal == "S") %>%
-  mutate(m1a = value/lag(value,1)-1, m1a = (1+m1a)^4-1) %>%
-  ggplot(aes(date,m1a)) + geom_line()
+
+
+cps_jobs_data %>% filter(series_id == "LNS14000000") %>% select(date, urate = value) %>% mutate(diff_urate = log(urate)-log(lag(urate,12))) %>%
+  ggplot(aes(date,diff_urate)) + geom_line() + theme_classic() + geom_hline(yintercept = -0.1, color="red") +
+  labs(title="Do you know why I pulled you over? You were way over the speed limit.",
+       subtitle="log of unemployment rate minus the log of unemployment rate lagged 12 months. Red line is -0.1.")
+
+ggsave("graphics/speed_limit.png",  width = 12, height=6.75, dpi="retina")
+
+
+
+on_temporary_layoff <- cps_jobs_data %>% filter(series_id %in% c("LNS13023653","LNS11000000")) %>%
+  group_by(date) %>%
+  summarize(temp_layoff = value[series_id == "LNS13023653"]/value[series_id == "LNS11000000"]) %>%
+  filter(!is.na(temp_layoff))
+
+cps_jobs_data %>% filter(series_id == "LNS14000000") %>% select(date, urate = value) %>%
+  mutate(urate = urate/100) %>%
+  left_join(on_temporary_layoff, by="date") %>%
+  mutate(u_excluding_temp = urate - temp_layoff) %>%
+  mutate(diff_urate_excluding = log(u_excluding_temp)-log(lag(u_excluding_temp,12))) %>%
+  mutate(diff_urate = log(urate)-log(lag(urate,12))) %>%
+  ggplot(aes(date,diff_urate)) + geom_line() + geom_line(aes(date,diff_urate_excluding),color="green") + theme_classic() + geom_hline(yintercept = -0.1, color="red") +
+  labs(title="Do you know why I pulled you over? You were way over the speed limit.",
+       subtitle="log of unemployment rate minus the log of unemployment rate lagged 12 months. Red line is -0.1.\nGreen line is excluding 'Job losers and persons who completed temporary jobs - On temporary layoff'")
+
+ggsave("graphics/speed_limit2.png",  width = 12, height=6.75, dpi="retina")
+
+
+
+recession_starts <- c("1945-02-01",
+                      "1948-11-01",
+                      "1953-07-01",
+                      "1958-08-01",
+                      "1960-04-01",
+                      "1969-12-01",
+                      "1973-11-01",
+                      "1980-01-01",
+                      "1981-07-01",
+                      "1990-07-01",
+                      "2001-03-01",
+                      "2007-12-01",
+                      "2020-02-01")
+recession_starts <- as.Date(recession_starts)
+
+
+
+data <- cps_jobs_data %>% filter(series_id == "LNS12300060") %>%
+  select(date,value = value)
+
+# Load the necessary libraries
+library(tidyverse)
+#library(tibbletime)
+library(lubridate)
+
+# Import the data
+
+# Define a function that takes in the data and the start date of a recession, and returns the number of months it takes to return to the pre-recession employment to population ratio
+months_to_recovery <- function(data, recession_start_date){
+  pre_recession_erp <- data %>%
+    filter(date < recession_start_date) %>%
+    filter(date == max(date))
+  pre_recession_erp <- pre_recession_erp$erp
+  
+  post_recession_data <- data %>%
+    filter(date >= recession_start_date)
+  
+  recovery_date <- post_recession_data %>%
+    filter(erp >= pre_recession_erp) %>%
+    filter(date == min(date))
+  recovery_date <- recovery_date$date
+  
+  if(is.na(recovery_date)){
+    return(NA)
+  } else {
+    x=interval(ymd(recession_start_date),ymd(recovery_date))
+    x= x %/% months(1)
+    return(x)
+  }
+}
+
+months_to_recovery(data,"2007-12-01")
+
+# Apply the function to every recession start date and store the results in a data frame
+recession_dates <- c("1945-02-01", "1948-11-01", "1953-07-01", "1958-08-01", "1960-04-01", "1969-12-01", "1973-11-01", "1980-01-01", "1981-07-01", "1990-07-01", "2001-03-01", "2007-12-01", "2020-02-01")
+recession_dates <- as.Date(recession_dates)
+recovery_times <- data.frame(recession_start_date = ymd(recession_dates), months_to_recovery = NA)
+for(i in 1:nrow(recovery_times)){
+  recovery_times$months_to_recovery[i] <- months_to_recovery(data, recovery_times$recession_start_date[i])
+}
+
+# Print the results
+
+#unemployment rate
+data <- cps_jobs_data %>% filter(series_id == "LNS14000000") %>%
+  select(date,value = value)
+
+
+data %>% mutate(at_period = date %in% recession_dates) %>%
+  mutate(period_title = as.character(year(date))) %>%
+  mutate(period_title = if_else(at_period, period_title, as.character(NA)))
+
+data$within_period <- as.Date(NA)
+for(i in 1:length(recession_dates)){
+  data <- data %>%
+    mutate(within_period_holder = date >= recession_dates[i] & date < recession_dates[i] %m+% months(36)) %>%
+    mutate(within_period = if_else(within_period_holder,recession_dates[i],within_period))
+  
+}
+
+data$within_period <- as.factor(year(data$within_period))
+data <- data[!is.na(within_period)]
+
+data <- data %>% group_by(within_period) %>%
+  mutate(x=interval(ymd(min(date)),date)) %>%
+  mutate(x= x %/% months(1)) %>%
+  mutate(diff_value = value-value[date == min(date)]) %>%
+  ungroup()
+
+
+
+data %>% ggplot(aes(x,diff_value, color=within_period)) + geom_line() + facet_wrap(~within_period)

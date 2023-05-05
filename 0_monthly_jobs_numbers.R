@@ -11,6 +11,9 @@ library(tidyverse)
 library(ggtext)
 library(scales)
 library(lubridate)
+library(httr)
+library(data.table)
+library(magrittr)
 
 
 theme_lass <-   theme_modern_rc() + theme(legend.position = "none", legend.title = element_blank(),
@@ -44,11 +47,17 @@ source(file = "1_b_load_bls_ces_jobs_data.R")
 # https://download.bls.gov/pub/time.series/ln/
 
 
+title_longer_graphic <- "This is the wage graphic"
+title_longer_graphic <- "Wages Are Decelerating to 2018-2019 Values"
+
+total_jobs_title <- "Jobs title"
+total_jobs_title <- "Job Growth Remains Strong"
+
+six_month_jobs_occupations_title <- "Occupations last month versus previous six months"
+six_month_jobs_occupations_title <- "Job Growth is Slowing in Cyclical While Still Strong in Services"
+
 #### These are the current graphics we produce immediately ####
 source(file = "2_1_epop_change.R")
-source(file = "2_2_lfp_change.R")
-source(file = "2_3_cbo_projections.R")
-source(file = "2_4_low_U_job_growth.R")
-source(file = "2_5_2018_comparsion.R")
-source(file = "2_6_wages_compression.R")
-source(file = "2_8_occupations_industries.R")
+source(file = "2_2_jobs_in_context.R")
+source(file = "2_3_unemployment_durations.R")
+source(file = "2_4_wage_comparsion.R")
