@@ -18,6 +18,8 @@ ces_data <- GET("https://download.bls.gov/pub/time.series/ce/ce.data.0.AllCESSer
   content(as = "text") %>%
   fread()
 
+#ces_data <- read_delim("../../../Desktop/ce.data.0.AllCESSeries")
+
 ces_data <- ces_data %>%
   clean_names()
 ces_data$series_id <- str_trim(ces_data$series_id)

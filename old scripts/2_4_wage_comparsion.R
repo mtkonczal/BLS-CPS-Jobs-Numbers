@@ -72,37 +72,12 @@ AHE %>% filter(date > "2020-12-01") %>%
   scale_color_manual(values=c("#2D779C", "#A4CCCC")) +
   geom_text(show.legend=FALSE, nudge_x = 44, size = 5.5)
 
-ggsave("graphics/three_six_wages.png", dpi="retina", width = 12, height=10, units = "in")
+ggsave("graphics/three_six_wages.png", dpi="retina", width = 8, height=10, units = "in")
 
 
 #### Many Wages ####
 
-pre_wages <- ces_data %>% filter(seasonal == "S", data_type_code == 3, display_level == 1) %>%
-  group_by(industry_name) %>% summarize(change_2018_2019 = value[date=="2020-01-01"]/value[date=="2018-01-01"],
-                                        change_2018_2019 = change_2018_2019^(0.5)-1) %>%
-  ungroup()
-
-
-ces_data %>% filter(seasonal == "S", data_type_code == 3, display_level == 1) %>%
-  group_by(industry_name) %>% summarize(date = date, three_month_change = (value/lag(value,3))^4-1) %>%
+ces_data %>% filter(seasonal == "S", data_type_code == "03", display_level == 3) %>%
+  group_by(industry_name) %>% summarize(date = date, three_month_change = value/lag(value,3)-1) %>%
   ungroup() %>% filter(date >= "2021-01-01") %>%
-  left_join(pre_wages, by="industry_name") %>%
-  mutate(industry_name = str_replace_all(industry_name, "Administrative and support and waste management and remediation services","Admin/support/waste/remediation services")) %>%
-  ggplot(aes(date,three_month_change)) + geom_line(size=1.2) + facet_wrap(~industry_name, scales = "free") + theme_classic() +
-  geom_line(aes(date,change_2018_2019), color="red",linetype="dashed") +
-  labs(title="Sustained Wage Growth in Goods, Not in Services",
-       subtitle="Three month annualized change in average hourly earnings by sectors; red line is 2018-2019 annualized.",
-       caption="BLS, CES. Author's Calculations. Mike Konczal, Roosevelt Institute.",
-       x=NULL, y=NULL) + theme(plot.title.position = "plot") + scale_y_continuous(labels = percent)
-
-ggsave("graphics/supersector_wages.png", dpi="retina", width = 12, height=8, units = "in")
-
-
-
-
-ces_data %>% filter(seasonal == "S", data_type_text == "AVERAGE WEEKLY HOURS OF ALL EMPLOYEES", display_level == 3) %>%
-  group_by(industry_name) %>% summarize(date = date, value = value, three_month_change = (value/lag(value,3))^4-1) %>%
-  ungroup() %>% filter(date >= "2018-01-01") %>%
-  left_join(pre_wages, by="industry_name") %>%
-  mutate(industry_name = str_replace_all(industry_name, "Administrative and support and waste management and remediation services","Admin/support/waste/remediation services")) %>%
-  ggplot(aes(date,value)) + geom_line(size=1.2) + facet_wrap(~industry_name, scales = "free") + theme_classic()
+  ggplot(aes(date,three_month_change)) + geom_line() + facet_wrap(~industry_name) + theme_classic()

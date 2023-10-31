@@ -20,8 +20,8 @@ library(viridis)
 #source(file = "1_a_load_bls_cps_jobs_data.R")
 #source(file = "1_b_load_bls_ces_jobs_data.R")
 
-graphic_1_title = "Unemployment Duration Slowly Increasing, Returning to 2019 Levels"
-graphic_2_title = "More Entrants Among Unemployed"
+graphic_1_title = "Unemployment Duration Picks Up, Remains Below 2019 Levels"
+graphic_2_title = "More Job Losers Among Unemployed"
 
 
 #### Graphic 1: Duration Length of Unemployment ####
@@ -41,7 +41,7 @@ cps_jobs_data %>% filter(series_title %in% u_duration_series, periodicity_code =
   filter(date >= "2017-01-01") %>%
   mutate(series_title = str_remove(series_title,"\\(Seas\\)")) %>%
   ggplot(aes(date,value,color=series_title,label=last_value)) + 
-  geom_line(size=2) + theme_lass +
+  geom_line(size=1.2) + geom_point() + theme_lass +
   geom_line(aes(date,pre_value,color=series_title), linetype="dashed") +
   theme(legend.position = c(0.3,0.9)) +
   scale_x_date(date_labels = "%B\n%Y", breaks=g_dates) +
@@ -81,7 +81,7 @@ cps_jobs_data %>% filter(series_id %in% u_reasons_series, periodicity_code == "M
   mutate(pre_value = if_else(year(date)>=2019,pre_value,as.numeric(NA))) %>%
   filter(date >= "2021-01-01") %>%
   ggplot(aes(date,value, color=series_title,label=label_percent()(round(last_value,2)))) +
-  geom_line(size=2) + theme_lass + facet_wrap(~series_title, scales = "free") +
+  geom_line(size=1.2) + geom_point() + theme_lass + facet_wrap(~series_title, scales = "free") +
   scale_y_continuous(labels = percent) +
   scale_x_date(date_labels = "%b\n%Y", breaks=g_dates) +
   labs(title=graphic_2_title,
@@ -91,7 +91,7 @@ cps_jobs_data %>% filter(series_id %in% u_reasons_series, periodicity_code == "M
   geom_line(aes(date,pre_value,color=series_title), linetype="dashed") +
   geom_text(show.legend=FALSE, nudge_x = 60, size = 4)
 
-ggsave("graphics/u_by_percent.png",  width = 12, height=10, dpi="retina")
+ggsave("graphics/u_by_percent.png",  width = 10, height=10, dpi="retina")
 
 #### Graphic 3: Unemployment Type by Unemployment Rate ####
 
@@ -131,7 +131,7 @@ rbind(job_leavers,entrants,on_temporary_layoff,not_on_temporary_layoff) %>%
   mutate(pre_value = if_else(year(date)>=2019,pre_value,as.numeric(NA))) %>%
   filter(date >= year_delay) %>%
   ggplot(aes(date,value, color=series_title,label=label_percent()(round(last_value,3)))) +
-  geom_line(size=2) + theme_lass + facet_wrap(~series_title, scales = "free") +
+  geom_line(size=1.2) + geom_point(size=2) + theme_lass + facet_wrap(~series_title, scales = "free") +
   scale_y_continuous(labels = percent) +
   scale_x_date(date_labels = "%b\n%Y", breaks=g_dates) +
   labs(title=graphic_2_title,
@@ -141,4 +141,4 @@ rbind(job_leavers,entrants,on_temporary_layoff,not_on_temporary_layoff) %>%
   geom_line(aes(date,pre_value,color=series_title), linetype="dashed") +
   geom_text(show.legend=FALSE, nudge_x = 25, size = 4)
 
-ggsave("graphics/u_by_urate.png",  width = 12, height=10, dpi="retina")
+ggsave("graphics/u_by_urate.png",  width = 10, height=10, dpi="retina")

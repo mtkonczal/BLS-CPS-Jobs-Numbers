@@ -205,11 +205,9 @@ cps_jobs_data %>% filter(series_id %in% c("LNS14000006","LNS14000003")) %>%
   ggplot(aes(date,value,color=series_title)) + geom_line() + theme_classic() + theme(legend.position = "bottom")
 
 cps_jobs_data %>% filter(series_id %in% c("LNS14000006","LNS14000003")) %>%
-  group_by(date) %>% summarize(black_u = value[series_id== "LNS14000006"],
-                               relative_diff = value[series_id == "LNS14000006"]/value[series_id == "LNS14000003"],
+  group_by(date) %>% summarize(relative_diff = value[series_id == "LNS14000006"]/value[series_id == "LNS14000003"],
                                absolute_diff = value[series_id == "LNS14000006"] - value[series_id == "LNS14000003"]) %>%
-  ggplot(aes(date, absolute_diff)) + geom_line() + geom_line(aes(date,black_u, color="red")) +
-  geom_line(aes(date,relative_diff, color="purple"))
+  ggplot(aes(date, absolute_diff)) + geom_line() + geom_line(aes(date,relative_diff))
 
 
 cps_jobs_data %>% filter(series_id %in% c("LNS14000006","LNS14000003")) %>%
@@ -248,9 +246,3 @@ long_epop %>%
   scale_y_continuous(labels = scales::percent)
 
 ggsave("graphics/long_epop.png",  width = 12, height=8, dpi="retina")
-
-
-##### Men and Women ####
-cps_jobs_data %>% filter(series_id %in% c("LNS12300062","LNS12300060")) %>%
-  ggplot(aes(date, value, color=series_title)) + geom_line() +
-  theme_lass

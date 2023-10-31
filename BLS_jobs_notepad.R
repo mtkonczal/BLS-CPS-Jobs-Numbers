@@ -2,6 +2,8 @@ setwd("/Users/mkonczal/Documents/GitHub/BLS-CPS-Jobs-Numbers/")
 
 library(tidyverse)
 library(ggtext)
+library(lubridate)
+
 
 #source(file = "1_b_load_bls_ces_jobs_data.R")
 
@@ -77,10 +79,6 @@ recession_starts <- as.Date(recession_starts)
 data <- cps_jobs_data %>% filter(series_id == "LNS12300060") %>%
   select(date,value = value)
 
-# Load the necessary libraries
-library(tidyverse)
-#library(tibbletime)
-library(lubridate)
 
 # Import the data
 
@@ -119,13 +117,15 @@ for(i in 1:nrow(recovery_times)){
 }
 
 # Print the results
+recession_dates_all <- read_csv("data/recession_dates.csv")
+recession_dates <- recession_dates_all$end_date
 
 #unemployment rate
 data <- cps_jobs_data %>% filter(series_id == "LNS14000000") %>%
   select(date,value = value)
 
 
-data %>% mutate(at_period = date %in% recession_dates) %>%
+a <- data %>% mutate(at_period = date %in% recession_dates) %>%
   mutate(period_title = as.character(year(date))) %>%
   mutate(period_title = if_else(at_period, period_title, as.character(NA)))
 
@@ -149,3 +149,51 @@ data <- data %>% group_by(within_period) %>%
 
 
 data %>% ggplot(aes(x,diff_value, color=within_period)) + geom_line() + facet_wrap(~within_period)
+
+# Example list of dates
+date_list <- c("2022-05-10", "2022-06-15", "2022-07-20")
+
+# Example array of all dates
+all_dates <- seq(as.Date("2022-01-01"), as.Date("2022-12-31"), by = "day")
+
+# Create a variable with the last date in the list for each date in the array
+last_dates <- sapply(all_dates, function(date) {
+  subset_dates <- as.Date(date_list)[as.Date(date_list) <= date]
+  if (length(subset_dates) > 0) {
+    as.Date(max(subset_dates))
+  } else {
+    NA
+  }
+})
+
+# Format the last dates as character strings
+formatted_dates <- format(last_dates, "%Y-%m-%d")
+
+# Print the last dates
+print(formatted_dates)
+
+##### CES BY RACE ####
+LNS12000003
+b <- cps_jobs_data %>% filter(date == "2023-01-01", seasonal == "U")
+LNU02000003\
+LNU12000003
+
+a <-
+  cps_jobs_data %>% filter(series_id %in% c("LNS12000003","LNU02000003", "LNU02000006")) %>%
+  filter(date >= "2020-01-01") %>%
+  group_by(series_title) %>%
+  summarize(date = date, diff = value - value[date == "2020-01-01"]) %>%
+  ungroup() %>%
+  ggplot(aes(date, diff, color=series_title)) + geom_line() +
+  geom_hline(yintercept = 0) + geom_hline(yintercept = -900) +
+  theme_classic() +
+  theme(legend.position=c(0.7,0.3)) + labs(subtitle="Difference Between Month and Feburary 2020. Mike Konczal, Roosevelt Institute.")
+
+ggsave("graphics/race_recovery.png",  width = 12, height=6.75, dpi="retina")
+
+b <- 
+  cps_jobs_data %>% filter(series_id %in% c("LNS12000000","LNU02000000")) %>%
+  filter(date > "2020-01-01") %>%
+  group_by(series_title) %>%
+  summarize(date = date, diff = value - value[date == "2020-02-01"]) %>%
+  ungroup()

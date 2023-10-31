@@ -20,8 +20,8 @@ library(viridis)
 #source(file = "1_a_load_bls_cps_jobs_data.R")
 #source(file = "1_b_load_bls_ces_jobs_data.R")
 
-graphic_1_title = "Unemployment Duration Slowly Increasing, Returning to 2019 Levels"
-graphic_2_title = "More Entrants Among Unemployed"
+graphic_1_title = "Unemployment Duration Still Decreasing, Remains Below 2019 Levels"
+graphic_2_title = "Fewer Entrants, More Job Losers, Among Unemployed"
 
 
 #### Graphic 1: Duration Length of Unemployment ####
@@ -91,7 +91,7 @@ cps_jobs_data %>% filter(series_id %in% u_reasons_series, periodicity_code == "M
   geom_line(aes(date,pre_value,color=series_title), linetype="dashed") +
   geom_text(show.legend=FALSE, nudge_x = 60, size = 4)
 
-ggsave("graphics/u_by_percent.png",  width = 12, height=10, dpi="retina")
+ggsave("graphics/u_by_percent.png",  width = 10, height=10, dpi="retina")
 
 #### Graphic 3: Unemployment Type by Unemployment Rate ####
 
@@ -141,4 +141,4 @@ rbind(job_leavers,entrants,on_temporary_layoff,not_on_temporary_layoff) %>%
   geom_line(aes(date,pre_value,color=series_title), linetype="dashed") +
   geom_text(show.legend=FALSE, nudge_x = 25, size = 4)
 
-ggsave("graphics/u_by_urate.png",  width = 12, height=10, dpi="retina")
+ggsave("graphics/u_by_urate.png",  width = 10, height=10, dpi="retina")

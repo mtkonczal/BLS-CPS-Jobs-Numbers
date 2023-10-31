@@ -21,6 +21,8 @@ cps_jobs_data <- GET("https://download.bls.gov/pub/time.series/ln/ln.data.1.AllD
   content(as = "text") %>%
   fread()
 
+#cps_jobs_data <- read_delim("../../../Desktop/ln.data.1.AllData")
+
 cps_jobs_data <- cps_jobs_data %>%
   clean_names()
 
