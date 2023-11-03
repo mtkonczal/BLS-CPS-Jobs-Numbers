@@ -43,12 +43,13 @@ actual_cbot <- cbot %>% filter(source == "Actual")
 
 cbot %>%
   filter(date > "2020-01-01" & date < "2024-01-01") %>%
-ggplot(aes(date, value, color=source, linetype=source)) + geom_line(size=1.5) + facet_wrap(~type, scales = "free") +
-  geom_line(data = actual_cbot, aes(date,value), size=4.5) +
-  theme_lass +
+ggplot(aes(date, value, color=source)) + geom_line(size=1.2) + facet_wrap(~type, scales = "free") +
+  geom_line(data = actual_cbot, aes(date,value), size=1.2) +
+  theme_classic() +
   theme(legend.position=c(0.35,0.55)) +
   scale_x_date(date_labels = "%b\n%Y", date_breaks = "6 months") +
   scale_color_manual(values=c("#2D779C", "#FFD3B5", "#F67280")) +
+  scale_linetype_manual(values = c("solid","dashed","dashed")) +
   labs(title="The Labor Market is Not Only Beating Pre-American Rescue Plan Projections, It's Beating Pre-Covid Ones Too",
        subtitle="Solid line is actual, dotted lines are CBO projections by date.",
        caption="BLS, CBO. Dotted lines are CBO quarterly 10-Year Economic Projections, Jan 2020 and Feb 2021. Author's calculations. Mike Konczal, Roosevelt Institute",
@@ -58,3 +59,28 @@ ggplot(aes(date, value, color=source, linetype=source)) + geom_line(size=1.5) + 
         strip.text = element_text(face = "bold", color="white", hjust = 0.5, size = 22))
 
 ggsave("graphics/cbo_projects.png", width = 19, height=10.68, dpi="retina")
+
+
+
+cbot %>%
+  filter(date > "2020-01-01" & date < "2024-01-01") %>%
+  ggplot(aes(date, value, color=source, linetype=source, size=source)) + geom_line(size=1.2) + facet_wrap(~type, scales = "free") +
+  theme_classic() +
+  theme(legend.position='none') +
+  theme(legend.position=c(0.35,0.55)) +
+  scale_x_date(date_labels = "%b %y", date_breaks = "3 months") +
+  scale_color_manual(values = c("#01579B", "darkred","purple")) +
+  scale_linetype_manual(values = c("solid","dashed","dashed")) +
+  labs(title="Compared to Prior Projections, the Labor Market is Still Recovering Strong From the American Rescue Plan",
+       subtitle="subtitleNumbers",
+       caption="Household and establishment refer to the respective surveys. Seasonally adjusted.\nDotted red line is CBO quarterly 10-Year Economic Projections, February 2021.\nAuthor's calculations. Mike Konczal, Roosevelt Institute",
+       x="", y="") +
+  theme(strip.text = element_text(face = "bold", color = "black", hjust = 0.5, size = 21),
+        plot.title = element_text(size = 25, face="bold"), plot.subtitle = element_text(size=20, margin=margin(9,0,15,0),lineheight=1.05),
+        plot.caption = element_text(size=14, margin=margin(19,0,11,0), lineheight=1.05),
+        plot.title.position = "plot") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), strip.background = element_blank()) +
+  theme(axis.text=element_text(size=11), legend.text.align = 0, legend.background = element_blank(), legend.title = element_blank(),
+        legend.key = element_blank(), legend.text = element_text(size=15, color="#222222"), panel.background = element_blank()) +
+  geom_point(aes(x=date, y=display_valueAll), size=3) +
+  geom_label_repel(aes(x=date, y=display_valueAll, label=round(display_valueAll,1)), size=5, box.padding = unit(0.2,"in"))
