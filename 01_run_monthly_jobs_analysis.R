@@ -19,7 +19,7 @@ source("scripts/02_load_ces_jobs.R")
 source("scripts/03_graphic_scripts.R")
 
 
-total_title <- "Job Growth is Slowing"
+total_title <- "Job Growth: Normalizing or Slowing?"
 total_jobs_graphic(ces_data, total_title)
 ggsave("graphics/total_jobs.png", dpi = "retina", width = 12, height = 6.75, units = "in")
 
@@ -31,8 +31,9 @@ double_jobs_chart(ces_data, "Hello there")
 
 black_white_comparison(cps_jobs_data)
 
-by_type_title <- "This things"
+by_type_title <- "Job Losers, Not Entrants, Drive Unemployment"
 unemployment_rate_by_type(cps_jobs_data, by_type_title)
+ggsave("graphics/urate_by_type.png", dpi = "retina", width = 12, height = 6.75, units = "in")
 
 duration_title <- "Unemployment duration slowly adjusting"
 draw_u_duration(cps_jobs_data, duration_title)
@@ -40,6 +41,7 @@ draw_u_duration(cps_jobs_data, duration_title)
 
 three_six_wages_title <- "Wage Growth is Slowing"
 three_six_wages(ces_data, three_six_wages_title)
+ggsave("graphics/wages_slowing.png", dpi = "retina", width = 12, height = 10, units = "in")
 
 
 make_jobs_chart(ces_data)
