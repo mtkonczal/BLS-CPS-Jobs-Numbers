@@ -134,7 +134,7 @@ rbind(job_leavers,entrants,on_temporary_layoff,not_on_temporary_layoff) %>%
   geom_line(size=1.2) + geom_point(size=2) + theme_lass + facet_wrap(~series_title, scales = "free") +
   scale_y_continuous(labels = percent) +
   scale_x_date(date_labels = "%b\n%Y", breaks=g_dates) +
-  labs(title=graphic_2_title,
+  labs(title="ttetete",
        subtitle="Unemployment rate contribution, by category of unemployment. Dotted line is average 2019 value.",
        caption="BLS, CPS, Seasonally-Adjusted, Mike Konczal, Roosevelt Institute") +
   scale_color_manual(values=c("#6EA4BF","#2D779C", "#97BC56","#E2E47E")) +
