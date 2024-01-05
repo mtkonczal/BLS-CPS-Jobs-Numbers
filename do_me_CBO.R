@@ -95,15 +95,16 @@ cbot <- cbot %>% mutate(display_valueAll = if_else(date == max(cboe$date),value,
 
 cbot %>%
   filter(date > "2020-01-01" & date < "2024-01-01") %>%
+  mutate(source = factor(source, levels=c("Actual","CBO Projections, Jan, 2020 (pre-covid)","CBO Projections, Feb, 2021 (pre-ARP)"))) %>%
 ggplot(aes(date, value, color=source, linetype=source, size=source)) + geom_line(size=1.2) + facet_wrap(~type, scales = "free") +
   theme_classic() +
-  theme(legend.position='none') +
-  scale_x_date(date_labels = "%b %y", date_breaks = "3 months") +
+  theme(legend.position=c(0.30,0.3)) +
+  scale_x_date(date_labels = "%b\n%Y", date_breaks = "6 months") +
   scale_color_manual(values = c("#01579B", "darkred","purple")) +
   scale_linetype_manual(values = c("solid","dashed","dashed")) +
-  labs(title="Compared to Prior Projections, the Labor Market is Still Recovering Strong From the American Rescue Plan",
-       subtitle=subtitleNumbers,
-       caption="Household and establishment refer to the respective surveys. Seasonally adjusted.\nDotted red line is CBO quarterly 10-Year Economic Projections, February 2021.\nAuthor's calculations. Mike Konczal, Roosevelt Institute",
+  labs(title="The Economy is Beating Prepandemic Projections",
+       subtitle="Employment and participation rates, actual vs CBO projections from before COVID and ARP.",
+       caption="Author's calculations. Mike Konczal, Roosevelt Institute",
        x="", y="") +
   theme(strip.text = element_text(face = "bold", color = "black", hjust = 0.5, size = 21),
         plot.title = element_text(size = 25, face="bold"), plot.subtitle = element_text(size=20, margin=margin(9,0,15,0),lineheight=1.05),
@@ -113,6 +114,7 @@ ggplot(aes(date, value, color=source, linetype=source, size=source)) + geom_line
   theme(axis.text=element_text(size=11), legend.text.align = 0, legend.background = element_blank(), legend.title = element_blank(),
         legend.key = element_blank(), legend.text = element_text(size=15, color="#222222"), panel.background = element_blank()) +
   geom_point(aes(x=date, y=display_valueAll), size=3) +
-  geom_label_repel(aes(x=date, y=display_valueAll, label=round(display_valueAll,1)), size=5, box.padding = unit(0.2,"in"))
+  geom_label_repel(aes(x=date, y=display_valueAll, label=round(display_valueAll,1)), size=5, box.padding = unit(0.2,"in"),show.legend = FALSE)
 
-ggsave("graphics/cbo_projects.png", width = 19, height=10.68, dpi="retina")
+ggsave("graphics/cbo_projects.png", width = 12, height=8, dpi="retina")
+
