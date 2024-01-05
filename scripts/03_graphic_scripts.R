@@ -60,12 +60,12 @@ total_jobs_graphic <- function(ces_data, graphic_title = "Default title", length
     geom_bar(stat = "identity") +
     geom_text(nudge_y = 30) +
     theme_lass +
-    geom_line(aes(date, before_trend), color = "red", linetype = "dashed", size = 1.2) +
+    geom_line(aes(date, before_trend), color = "red", size = 1.2) +
     labs(
       y = NULL,
       x = NULL,
       title = graphic_title,
-      subtitle = paste("Total job growth, employment survey, seasonally-adjusted. Dotted line reflects 2018-19 average growth of ", avg_job_growth, " thousand.", sep = ""),
+      subtitle = paste("Total job growth, employment survey, seasonally-adjusted. Red line reflects 2018-19 average growth of ", avg_job_growth, " thousand.", sep = ""),
       caption = "BLS, CES, seasonally adjusted values. Author's calculation. Mike Konczal"
     ) +
     scale_x_date(date_labels = "%b\n%Y", breaks = ces_dates)
@@ -318,8 +318,6 @@ three_six_wages <- function(ces_data, graphic_title = "Wages trend default title
     mutate(time_length = str_replace_all(time_length, "ThreeMonth", "3-Month Change")) %>%
     mutate(last_value = ifelse(date == max(date), change, NA))
 
-
-  
   one_month_change <- ces_data %>%
     select(date, value) %>%
     mutate(one_month = value/lag(value,1)) %>%
@@ -431,7 +429,7 @@ industry_timeline <- ces_data %>%
       change = "Last-Month",
       last = "Current Level",
       change3 = html("3-Month Average"),
-      change2019 = "Since 2019",
+      change2019 = "Change\nSince 2019",
       last_change = "This\nMonth",
       last_3change = "Last 3\nMonth",
       last_6change = "Last 6\nMonth",

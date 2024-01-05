@@ -44,7 +44,7 @@ actual_cbot <- cbot %>% filter(source == "Actual")
 cbot %>%
   filter(date > "2020-01-01" & date < "2024-01-01") %>%
 ggplot(aes(date, value, color=source, linetype=source)) + geom_line(size=1.5) + facet_wrap(~type, scales = "free") +
-  geom_line(data = actual_cbot, aes(date,value), size=4.5) +
+  geom_line(data = actual_cbot, aes(date,value), size=2) +
   theme_lass +
   theme(legend.position=c(0.35,0.55)) +
   scale_x_date(date_labels = "%b\n%Y", date_breaks = "6 months") +

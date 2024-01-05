@@ -109,11 +109,11 @@ GR_compare$old_school <- if_else(GR_compare$date >= "2001-05-01",GR_compare$old_
 
 GR_compare %>%
   ggplot(aes(date,value)) + geom_line(size=2) +
-  geom_line(aes(date,GRval_org), color="darkred", size=1.2, linetype="dashed") +
-  geom_line(aes(date,val_org), color="darkred", size=1.2, linetype="dashed") +
-  geom_line(aes(date,old_school), color="darkred", size=1.2, linetype="dashed") +
+  geom_line(aes(date,GRval_org), color="orange", size=1.2) +
+  geom_line(aes(date,val_org), color="orange", size=1.2) +
+  geom_line(aes(date,old_school), color="orange", size=1.2) +
   scale_y_continuous(labels = percent) + theme_lass +
-  labs(title="Prime-Age EPOP Highest in 22 Years", subtitle="Employment-to-population ratio, 25-54 years old, seasonally-adjusted. Red line is three month average prior.",
+  labs(title="Prime-Age EPOP Highest in Decades", subtitle="Employment-to-population ratio, 25-54 years old, seasonally-adjusted. Orange line is three month average prior.",
        caption="CPS, Seasonally Adjusted, Author's Calculations. Mike Konczal, Roosevelt Institute",
        x="", y="Employment to Population Ratio") +
   theme(plot.title = element_text(size = 25),

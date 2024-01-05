@@ -19,7 +19,7 @@ source("scripts/02_load_ces_jobs.R")
 source("scripts/03_graphic_scripts.R")
 
 
-total_title <- "Job Growth Remains Strongfffff"
+total_title <- "Relax, it's a Soft Landing: Job Growth Remains Steady"
 total_jobs_graphic(ces_data, total_title)
 ggsave("graphics/total_jobs.png", dpi = "retina", width = 12, height = 6.75, units = "in")
 
@@ -38,8 +38,8 @@ duration_title <- "Unemployment duration slowly adjusting"
 draw_u_duration(cps_jobs_data, duration_title)
 
 
-three_six_wages_title <- "Hello"
+three_six_wages_title <- "Wage Growth, While Volatile, in Line With Lower Inflation"
 three_six_wages(ces_data, three_six_wages_title)
-
+ggsave("graphics/wages_3_6.png", dpi = "retina", width = 12, height = 8, units = "in")
 
 make_jobs_chart(ces_data)
