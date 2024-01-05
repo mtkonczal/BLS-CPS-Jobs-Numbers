@@ -370,6 +370,9 @@ make_jobs_chart <- function(ces_data) {
   
   ces_data <- ces_data %>% filter(year(date)>2010)
   
+  ces_last <- ces_data %>% filter(series_id == "CES0000000001") %>% filter(date == max(date)) %>% pull(value)
+  ces_2019 <- ces_data %>% filter(series_id == "CES0000000001") %>% filter(date == "2019-12-01") %>% pull(value)
+  
   jobs_chart <- ces_data %>%
     filter(seasonal == "S") %>%
     filter((display_level <= 2 & data_type_code == 1)) %>%
@@ -377,11 +380,13 @@ make_jobs_chart <- function(ces_data) {
     summarize(
       change = value[date == max(date)] - value[date == max(date) %m-% months(1)],
       change3 = value[date == max(date)] - value[date == max(date) %m-% months(3)],
-      last = value[date == max(date)],
-      change2019 = last - value[date == "2019-12-01"],
+      change12 = value[date == max(date)] - value[date == max(date) %m-% months(12)],
+      last = value[date == max(date)]/ces_last,
+      change2019 = value[date == "2019-12-01"]/ces_2019,
       series_id = series_id[date == max(date)]
     ) %>%
-    mutate(change3 = round(change3/3))
+    mutate(change3 = round(change3/3),
+           change12 = round(change12/12))
   
 industry_timeline <- ces_data %>%
   filter(series_id %in% jobs_chart$series_id) %>%
@@ -405,10 +410,8 @@ industry_timeline <- ces_data %>%
     filter((display_level <= 2 & data_type_code == 3)) %>%
     group_by(industry_name) %>%
     summarize(last_change = value[date == max(date)]/value[date == max(date) %m-% months(1)],
-              last_3change = value[date == max(date)]/value[date == max(date) %m-% months(3)],
               last_6change = value[date == max(date)]/value[date == max(date) %m-% months(6)],
               last_change = last_change^12-1,
-              last_3change = last_3change^4-1,
               last_6change = last_6change^2-1)
   
   chart_date <- format(max(ces_data$date, na.rm = TRUE), "%B %Y")
@@ -419,40 +422,44 @@ industry_timeline <- ces_data %>%
     mutate(industry_name = if_else(industry_name == "Total nonfarm", "All jobs", industry_name)) %>%
     arrange(industry_name) %>%
     select(-series_id) %>%
-    mutate(last = format(last, big.mark=","),
-           change2019 = format(change2019, big.mark=",")) %>%
+#    mutate(last = format(last, big.mark=","),
+#           change2019 = format(change2019, big.mark=",")) %>%
     gt(groupname_col = "chart_type") %>%
     row_group_order(groups = c("Total", "Goods", "Services")) %>%
     tab_header(title = md(paste0("**Summary of the ", chart_date, " Jobs Number**")),
                subtitle = "All numbers in thousands, wage data annualized") %>%
     cols_label(
       change = "Last-Month",
-      last = "Current Level",
-      change3 = html("3-Month Average"),
-      change2019 = "Change\nSince 2019",
+      last = "Current\nPercents",
+      change3 = ("3-Month\nAverage"),
+      change12 = ("12-Month\nAverage"),
+      change2019 = "2019\nPercents",
       last_change = "This\nMonth",
-      last_3change = "Last 3\nMonth",
-      last_6change = "Last 6\nMonth",
+      last_6change = "Last 6\nMonths",
       industry_name = ""
     ) %>%
     tab_source_note(
       source_note = "BLS data, author's calculations. Since 2019 is change since December 2019. Mike Konczal, Roosevelt Institute"
     ) %>%
     opt_stylize(style = 6, color = "blue") %>%
-    fmt_percent(columns = c(last_change, last_3change, last_6change),
+    fmt_percent(columns = c(last_change, last_6change, last, change2019),
                             decimals = 1) %>%
     tab_spanner(
       label = "Employment Change",
-      columns = c(change, change3, last, change2019)
+      columns = c(change, change3, change12)
+    ) %>%
+    tab_spanner(
+      label = "Percent of\nEmployment",
+      columns = c(change2019, last)
     ) %>%
     tab_spanner(
       label = "Average Hourly Earnings",
-      columns = c(last_change, last_3change, last_6change)
+      columns = c(last_change, last_6change)
     ) %>%
     sub_missing(missing_text = "") %>%
-    cols_align(
+    cols_align(columns = c(last, change2019, change3, change12, last_6change, last_change),
       align = "center") %>%
-    cols_align(columns = c(last, change2019, industry_name),
+    cols_align(columns = c(industry_name),
       align = "right") %>%
     cols_align(columns = industry_name,
                align = "left") %>%

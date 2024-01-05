@@ -43,3 +43,5 @@ three_six_wages(ces_data, three_six_wages_title)
 ggsave("graphics/wages_3_6.png", dpi = "retina", width = 12, height = 8, units = "in")
 
 make_jobs_chart(ces_data)
+
+source("2_3_CBO_projections.R")
