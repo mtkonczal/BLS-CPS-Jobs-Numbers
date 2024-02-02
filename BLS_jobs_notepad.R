@@ -197,3 +197,36 @@ b <-
   group_by(series_title) %>%
   summarize(date = date, diff = value - value[date == "2020-02-01"]) %>%
   ungroup()
+
+
+
+compare_2019 <- ces_data %>% filter(seasonal == "S", industry_name == "Newspaper, periodical, book, and directory publishers", date == "2022-01-01")
+
+View(as_tibble(unique(compare_2019)))
+
+
+ces_data %>% filter(seasonal == "S", data_type_code == 1, industry_name == "Newspaper, periodical, book, and directory publishers") %>%
+  ggplot(aes(date,value)) + geom_line() + labs(subtitle="All employment, 'Newspaper, periodical, book, and directory publishers,' in thousands. BLS, CES.") + theme_classic()
+
+programmers <- cps_jobs_data %>% filter(series_id == "LNU02038230")
+
+news <- cps_jobs_data %>% filter(occupation_text == "News analysts, reporters, and journalists")
+
+programmers %>%
+  ggplot(aes(date, value)) + geom_line() + geom_point() + labs(subtitle="All employment, annual, occupation: computer programmers, BLS CPS.") + theme_classic()
+
+cps_jobs_data %>% filter(series_id == "LNU02038313") %>%
+  ggplot(aes(date, value)) + geom_line() + geom_point() + labs(subtitle="All employment, annual, occupation: News analysts, reporters, and journalists, BLS CPS.") + theme_classic()
+
+unique(cps_jobs_data$series_title)[grep("omputer", unique(cps_jobs_data$series_title))]
+
+a <- cps_jobs_data %>% filter(str_detect(series_title, "Employed - Computer programmers"))
+
+%>% group_by(industry_name) %>%
+  summarize(before = value[date == "2019-12-01"],
+            after = value[date == max(date)]) %>%
+  mutate(difference = after - before,
+         months_category = "Since End of 2019",
+         difference_label = round(difference),
+         positive = difference_label >= 0) %>%
+  ungroup()
