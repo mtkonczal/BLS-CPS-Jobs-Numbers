@@ -439,7 +439,7 @@ industry_timeline <- ces_data %>%
       industry_name = ""
     ) %>%
     tab_source_note(
-      source_note = "BLS data, author's calculations. Since 2019 is change since December 2019. Mike Konczal, Roosevelt Institute"
+      source_note = "BLS data, author's calculations. 2019 is value in December 2019. Mike Konczal, Roosevelt Institute"
     ) %>%
     opt_stylize(style = 6, color = "blue") %>%
     fmt_percent(columns = c(last_change, last_6change, last, change2019),
