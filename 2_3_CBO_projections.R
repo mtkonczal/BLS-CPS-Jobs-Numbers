@@ -45,14 +45,17 @@ ces_dates <- unique(cboe$date)
 ces_dates <- sort(ces_dates, decreasing = TRUE)
 ces_dates <- ces_dates[seq(1, length(ces_dates), 6)]
 
+border_color <- "#424242" 
+
 cbot %>%
-  filter(date > "2020-01-01" & date < "2024-01-01") %>%
+  filter(date > "2020-01-01" & date <= "2024-01-01") %>%
 ggplot(aes(date, value, color=source, linetype=source)) + geom_line(size=1.5) + facet_wrap(~type, scales = "free") +
-  geom_line(data = actual_cbot, aes(date,value), size=2) +
+  geom_line(data = actual_cbot, aes(date,value), color=border_color, size=2) +
+  geom_line(data = actual_cbot, aes(date,value), size=1.2) +
   theme_lass +
   theme(legend.position=c(0.35,0.55)) +
   scale_x_date(date_labels = "%b\n%Y", breaks = ces_dates) +
-  scale_color_manual(values=c("#1F77B4", "#FF7F0E", "#2CA02C")) +
+  scale_color_manual(values=c("#4F97D7", "#FF7F0E", "#2CA02C")) +
   scale_linetype_manual(values = c("solid","dotted","dotted")) +
   labs(title="The Labor Market is Not Only Beating Pre-American Rescue Plan Projections, It's Beating Pre-Covid Ones Too",
        subtitle="Solid line is actual, dotted lines are CBO projections by date.",

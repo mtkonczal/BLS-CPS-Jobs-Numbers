@@ -38,7 +38,7 @@ duration_title <- "Unemployment duration slowly adjusting"
 draw_u_duration(cps_jobs_data, duration_title)
 ggsave("graphics/duration.png", dpi = "retina", width = 12, height = 8, units = "in")
 
-three_six_wages_title <- "Wage Growth, While Volatile, in Line With Lower Inflation"
+three_six_wages_title <- "Average Hourly Earnings Remain Volatile"
 three_six_wages(ces_data, three_six_wages_title)
 ggsave("graphics/wages_3_6.png", dpi = "retina", width = 12, height = 8, units = "in")
 
@@ -46,9 +46,8 @@ make_jobs_chart(ces_data)
 
 source("2_3_CBO_projections.R")
 
-<<<<<<< Updated upstream
-source("annual_wrapup.R")
-=======
+#source("annual_wrapup.R")
+
 
 
 
@@ -74,8 +73,9 @@ df %>%
   ggplot(aes(x = date)) + geom_ribbon(aes(ymin=Q25, ymax=Q75), fill="skyblue") +
   geom_line(aes(y = median), color="black") +
   theme_lass +
-  labs(subtitle = "25th, median, and 75th quantiles for 3-month total employment change in 84 distinct (display-level 4) subindustries from BLS CES.",
-       caption = "Mike Konczal, Roosevelt Institute.", y="3-month change") +
+  labs(subtitle = "25th, median, and 75th quantiles for 3-month employment change in 84 distinct (display-level 4) CES subindustries.",
+       caption = "Thousands of jobs. 2020-2021 excluded from graphic as outliers. 84 categories cover 100% of jobs. Mike Konczal, Roosevelt Institute.", y="3-month change",
+       title="Employment Growth is Broad.") +
   theme(plot.title.position = "plot")
 
 
@@ -101,14 +101,14 @@ ces_data %>%
 
 
 
-#dl_0_2_2023 <- ces_data %>% filter(data_type_code == 1, seasonal == "S", display_level <= 2)
+dl_post <- ces_data %>% filter(data_type_code == 1, seasonal == "S", display_level <= 2)
 #saveRDS(df, "data/2023_ces_data.rds")
-dl_0_2_2023 <- readRDS("data/2023_ces_data.rds") %>% mutate(type = "original 2023 data")
+dl_0_2_2023 <- readRDS("data/2023_ces_data.rds") %>% mutate(type = "Original 2023 data")
 #ces_data %>% filter(data_type_code == 1, seasonal == "S", display_level <= 2) %>%
 dl_factor <- dl_0_2_2023 %>% select(industry_code, industry_name, display_level) %>% distinct(industry_code, .keep_all = TRUE) %>% pull(industry_name)
 
-dl_0_2_2023 %>% mutate(value = value - year*100) %>%
-  mutate(type = "revised 2023 data") %>%
+dl_post %>%
+  mutate(type = "Revised 2023 data") %>%
   rbind(dl_0_2_2023) %>%
   group_by(type, industry_name) %>%
   mutate(diff = value - lag(value, 12)) %>%
@@ -127,6 +127,6 @@ dl_0_2_2023 %>% mutate(value = value - year*100) %>%
   geom_bar(position="dodge", stat="identity", linewidth=0) +
   coord_flip() +
   theme_lass +
-  geom_text(aes(y = diff + 200 * sign(diff), label = diff, group = type), color="white", size=6, position = position_dodge(width = 0.9)) +
-  labs(title = "Comparison means very little.", caption="Mike Konczal, Roosevelt Institute.") +
+  geom_text(aes(y = diff + 175 * sign(diff), label = diff, group = type), color="white", size=5, position = position_dodge(width = 0.9)) +
+  labs(title = "Annual and Monthly Updates Net Find More Jobs in 2023.", caption="Mike Konczal, Roosevelt Institute.") +
   theme(legend.position = "bottom")

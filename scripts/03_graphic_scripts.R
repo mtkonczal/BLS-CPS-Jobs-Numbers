@@ -381,8 +381,8 @@ make_jobs_chart <- function(ces_data) {
       change = value[date == max(date)] - value[date == max(date) %m-% months(1)],
       change3 = value[date == max(date)] - value[date == max(date) %m-% months(3)],
       change12 = value[date == max(date)] - value[date == max(date) %m-% months(12)],
-      last = value[date == max(date)]/ces_last,
       change2019 = value[date == "2019-12-01"]/ces_2019,
+      last = value[date == max(date)]/ces_last,
       series_id = series_id[date == max(date)]
     ) %>%
     mutate(change3 = round(change3/3),
