@@ -73,8 +73,8 @@ df %>%
          median = if_else(year(date) %in% c(2020,2021), NA, median)) %>%
   ggplot(aes(x = date)) + geom_ribbon(aes(ymin=Q25, ymax=Q75), fill="skyblue") +
   geom_line(aes(y = median), color="black") +
-  theme_classic(base_size = 18) +
-  labs(title = "25th, median, and 75th quantiles for 3-month total employment change in 84 distinct (display-level 4) subindustries from BLS CES.",
+  theme_lass +
+  labs(subtitle = "25th, median, and 75th quantiles for 3-month total employment change in 84 distinct (display-level 4) subindustries from BLS CES.",
        caption = "Mike Konczal, Roosevelt Institute.", y="3-month change") +
   theme(plot.title.position = "plot")
 
@@ -130,4 +130,3 @@ dl_0_2_2023 %>% mutate(value = value - year*100) %>%
   geom_text(aes(y = diff + 200 * sign(diff), label = diff, group = type), color="white", size=6, position = position_dodge(width = 0.9)) +
   labs(title = "Comparison means very little.", caption="Mike Konczal, Roosevelt Institute.") +
   theme(legend.position = "bottom")
->>>>>>> Stashed changes
