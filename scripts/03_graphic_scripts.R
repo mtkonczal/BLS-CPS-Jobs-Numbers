@@ -215,7 +215,7 @@ black_white_comparison <- function(cps_jobs_data, graphic_title = "Default Title
   
 }
 
-unemployment_rate_by_type <- function(cps_jobs_data, graphic_title = "Default title."){
+unemployment_rate_by_type <- function(cps_jobs_data, graphic_title = "Default title.", start_date = "2022-01-01", axis_months = 6){
   job_leavers <- cps_jobs_data %>% filter(series_id %in% c("LNS13023705","LNS11000000")) %>%
     group_by(date) %>%
     reframe(better_percent = value[series_id == "LNS13023705"]/value[series_id == "LNS11000000"]) %>%
@@ -245,11 +245,11 @@ unemployment_rate_by_type <- function(cps_jobs_data, graphic_title = "Default ti
     ungroup()
   
   urate_mine <- rbind(job_leavers,entrants,on_temporary_layoff,not_on_temporary_layoff) %>% group_by(date) %>% summarize(this_u_rate_works_maybe = sum(better_percent)) %>% ungroup()
-  year_delay <- max(not_on_temporary_layoff$date) %m-% months(12)
+  year_delay <- start_date
   
   g_dates <- unique(job_leavers$date)
   g_dates <- sort(g_dates, decreasing = TRUE)
-  g_dates <- g_dates[seq(1, length(g_dates), 3)]
+  g_dates <- g_dates[seq(1, length(g_dates), axis_months)]
   
   rbind(job_leavers,entrants,on_temporary_layoff,not_on_temporary_layoff) %>%
     rename(value = better_percent) %>%
@@ -260,15 +260,18 @@ unemployment_rate_by_type <- function(cps_jobs_data, graphic_title = "Default ti
     mutate(pre_value = if_else(year(date)>=2019,pre_value,as.numeric(NA))) %>%
     filter(date >= year_delay) %>%
     ggplot(aes(date,value, color=series_title,label=label_percent()(round(last_value,3)))) +
-    geom_line(size=1.2) + geom_point(size=2) + theme_lass + facet_wrap(~series_title, scales = "free") +
+    geom_line(size=1.2) +
+    #geom_point(size=2) +
+    theme_lass + facet_wrap(~series_title, scales = "free") +
     scale_y_continuous(labels = percent) +
     scale_x_date(date_labels = "%b\n%Y", breaks=g_dates) +
     labs(title=graphic_title,
          subtitle="Unemployment rate contribution, by category of unemployment. Dotted line is average 2019 value.",
-         caption="BLS, CPS, Seasonally-Adjusted, Mike Konczal, Roosevelt Institute") +
+         caption="BLS, CPS, Seasonally-Adjusted, Mike Konczal") +
     scale_color_manual(values=c("#6EA4BF","#2D779C", "#97BC56","#E2E47E")) +
     geom_line(aes(date,pre_value,color=series_title), linetype="dashed") +
-    geom_text(show.legend=FALSE, nudge_x = 25, size = 4)
+    theme(strip.text.x = element_text(size = 15))
+    #geom_text(show.legend=FALSE, nudge_x = 50, size = 5)
   
 }
 
@@ -297,7 +300,7 @@ draw_u_duration <- function(cps_jobs_data, graphic_title = "Default graphic.") {
     labs(
       title = graphic_title,
       subtitle = "Average and median weeks of unemployment length, dotted line is average 2019 value.",
-      caption = "BLS, CPS, Seasonally-Adjusted, Mike Konczal, Roosevelt Institute"
+      caption = "BLS, CPS, Seasonally-Adjusted, Mike Konczal"
     ) +
     scale_color_manual(values = c("#2D779C", "#97BC56")) +
     geom_text(show.legend = FALSE, nudge_x = 60, size = 5.5)
@@ -368,16 +371,16 @@ three_six_wages <- function(ces_data, graphic_title = "Wages trend default title
 
 make_jobs_chart <- function(ces_data) {
   
-  ces_data <- ces_data %>% filter(year(date)>2010)
+  ces_data <- ces_data %>% filter(year(date)>2010) %>% mutate(data_type_code = as.numeric(data_type_code))
   
   ces_last <- ces_data %>% filter(series_id == "CES0000000001") %>% filter(date == max(date)) %>% pull(value)
   ces_2019 <- ces_data %>% filter(series_id == "CES0000000001") %>% filter(date == "2019-12-01") %>% pull(value)
   
   jobs_chart <- ces_data %>%
     filter(seasonal == "S") %>%
-    filter((display_level <= 2 & data_type_code == 1)) %>%
+    filter(display_level <= 2, data_type_code == 1) %>%
     group_by(industry_name) %>%
-    summarize(
+    reframe(
       change = value[date == max(date)] - value[date == max(date) %m-% months(1)],
       change3 = value[date == max(date)] - value[date == max(date) %m-% months(3)],
       change12 = value[date == max(date)] - value[date == max(date) %m-% months(12)],
@@ -430,10 +433,10 @@ industry_timeline <- ces_data %>%
                subtitle = "All numbers in thousands, wage data annualized") %>%
     cols_label(
       change = "Last-Month",
-      last = "Current\nPercents",
-      change3 = ("3-Month\nAverage"),
-      change12 = ("12-Month\nAverage"),
-      change2019 = "2019\nPercents",
+      last = "Current",
+      change3 = ("3-Month"),
+      change12 = ("12-Month"),
+      change2019 = "2019",
       last_change = "This\nMonth",
       last_6change = "Last 6\nMonths",
       industry_name = ""
@@ -449,7 +452,7 @@ industry_timeline <- ces_data %>%
       columns = c(change, change3, change12)
     ) %>%
     tab_spanner(
-      label = "Percent of\nEmployment",
+      label = "Employment (%)",
       columns = c(change2019, last)
     ) %>%
     tab_spanner(

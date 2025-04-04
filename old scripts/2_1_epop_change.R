@@ -18,6 +18,26 @@ library(tidytext)
 epop <- cps_jobs_data %>% filter(seasonal == "S") %>% filter(periodicity_code == "M") %>%
   filter(grepl("Employment-Population Ratio", series_title))
 
+
+epop %>% filter(date == max(date)) %>%
+  select(series_id, series_title) %>%
+  distinct(series_title, .keep_all = TRUE) 
+
+
+df <- epop %>% filter(series_id %in% c("LNS12300061","LNS12300062")) %>%
+  select(series_title, date, value) %>%
+  pivot_wider(names_from = series_title, values_from = value) %>%
+  clean_names()
+
+df %>%
+  filter(seas_employment_population_ratio_25_54_yrs_men >= seas_employment_population_ratio_25_54_yrs_men[date == max(date)]) %>%
+  arrange(desc(date))
+
+df %>%
+  filter(seas_employment_population_ratio_25_54_yrs_women >= seas_employment_population_ratio_25_54_yrs_women[date == max(date)]) %>%
+  arrange(desc(date))
+
+
 # We are now setting this to a specific date, January 2021 here, rather than X months ago.
 # Uncomment "MonthsToLag" with a numerical value to go back to X months ago.
 LagMonth <- as.Date("2022-01-01")
@@ -109,11 +129,11 @@ GR_compare$old_school <- if_else(GR_compare$date >= "2001-05-01",GR_compare$old_
 
 GR_compare %>%
   ggplot(aes(date,value)) + geom_line(size=2) +
-  geom_line(aes(date,GRval_org), color="orange", size=1.2) +
-  geom_line(aes(date,val_org), color="orange", size=1.2) +
-  geom_line(aes(date,old_school), color="orange", size=1.2) +
+  geom_line(aes(date,GRval_org), color="darkred", size=1.2, linetype="dashed") +
+  geom_line(aes(date,val_org), color="darkred", size=1.2, linetype="dashed") +
+  geom_line(aes(date,old_school), color="darkred", size=1.2, linetype="dashed") +
   scale_y_continuous(labels = percent) + theme_lass +
-  labs(title="Prime-Age EPOP Highest in Decades", subtitle="Employment-to-population ratio, 25-54 years old, seasonally-adjusted. Orange line is three month average prior.",
+  labs(title="Prime-Age EPOP Highest in 22 Years", subtitle="Employment-to-population ratio, 25-54 years old, seasonally-adjusted. Red line is three month average prior.",
        caption="CPS, Seasonally Adjusted, Author's Calculations. Mike Konczal, Roosevelt Institute",
        x="", y="Employment to Population Ratio") +
   theme(plot.title = element_text(size = 25),
@@ -205,9 +225,11 @@ cps_jobs_data %>% filter(series_id %in% c("LNS14000006","LNS14000003")) %>%
   ggplot(aes(date,value,color=series_title)) + geom_line() + theme_classic() + theme(legend.position = "bottom")
 
 cps_jobs_data %>% filter(series_id %in% c("LNS14000006","LNS14000003")) %>%
-  group_by(date) %>% summarize(relative_diff = value[series_id == "LNS14000006"]/value[series_id == "LNS14000003"],
+  group_by(date) %>% summarize(black_u = value[series_id== "LNS14000006"],
+                               relative_diff = value[series_id == "LNS14000006"]/value[series_id == "LNS14000003"],
                                absolute_diff = value[series_id == "LNS14000006"] - value[series_id == "LNS14000003"]) %>%
-  ggplot(aes(date, absolute_diff)) + geom_line() + geom_line(aes(date,relative_diff))
+  ggplot(aes(date, absolute_diff)) + geom_line() + geom_line(aes(date,black_u, color="red")) +
+  geom_line(aes(date,relative_diff, color="purple"))
 
 
 cps_jobs_data %>% filter(series_id %in% c("LNS14000006","LNS14000003")) %>%
@@ -246,3 +268,9 @@ long_epop %>%
   scale_y_continuous(labels = scales::percent)
 
 ggsave("graphics/long_epop.png",  width = 12, height=8, dpi="retina")
+
+
+##### Men and Women ####
+cps_jobs_data %>% filter(series_id %in% c("LNS12300062","LNS12300060")) %>%
+  ggplot(aes(date, value, color=series_title)) + geom_line() +
+  theme_lass
