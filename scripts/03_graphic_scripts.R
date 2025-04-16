@@ -6,7 +6,7 @@
 # Written by: Mike Konczal, Roosevelt Institute
 # Last Updated: 7/6/2021
 
-setwd("/Users/mkonczal/Documents/GitHub/BLS-CPS-Jobs-Numbers/")
+
 library(tidyverse)
 library(ggtext)
 library(ggrepel)
