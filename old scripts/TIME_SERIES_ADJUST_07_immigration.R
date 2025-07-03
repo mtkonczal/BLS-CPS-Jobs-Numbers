@@ -12,19 +12,33 @@ library(tidytext)
 library(seasonal)
 
 
+View(cps_jobs_data %>% filter(seasonal == "S") %>% select(series_id, series_title) %>% distinct(series_title, .keep_all = TRUE))
+
+# Native born unemployment ----
+
+cps_jobs_data %>%
+  filter(series_id == "LNU04073413") %>%
+  ggplot(aes(date, value)) +
+  geom_line()
+
+
+# Prime EPOP ----
+# This was an issue because the overall workforce is flat on native-born workers
+# as the population ages. But in the last few years prime has remained steady.
+
 prime_pop_foreign <- c("LNU00073399", "LNU00073400", "LNU00073401")
 prime_emp_foreign <- c("LNU02073399", "LNU02073400", "LNU02073401")
-
 
 prime_pop_native <- c("LNU00073417", "LNU00073418", "LNU00073419")
 prime_emp_native <- c("LNU02073417", "LNU02073418", "LNU02073419")
 
 df4 <- cps_jobs_data %>%
   filter(series_id %in% c(prime_pop_native, prime_emp_native, prime_pop_foreign, prime_emp_foreign)) %>%
-  group_by(date, born_code) %>%
+  group_by(date, born_text) %>%
   summarize(prime_emp = sum(value[lfst_text == "Employed"]),
             prime_pop = sum(value[lfst_text == "Civilian noninstitutional population"]),
-            prime_emp_pop = prime_emp/prime_pop)
+            prime_emp_pop = prime_emp/prime_pop) %>%
+  ungroup()
 
 
 df3 <- cps_jobs_data %>%
@@ -40,7 +54,7 @@ df3_seasonal_SA <- final(m)
 df3_seasonal_SA <- data.frame(value = as.matrix(df3_seasonal_SA), date = as.Date(zoo::yearmon(time(df3_seasonal_SA)))) %>% rename(seasonal_adjusted_epop = value)
 
 df3 %>%
-  left_join(df3_seasonal_SA, by="date") %>%
+#  left_join(df3_seasonal_SA, by="date") %>%
   select(date, prime_emp_pop, seasonal_adjusted_epop) %>%
   pivot_longer(cols = -date, names_to = "type", values_to = "values") %>%
   ggplot(aes(date, values, color=type)) + geom_line() + theme_classic() +

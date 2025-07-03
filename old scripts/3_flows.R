@@ -1,12 +1,5 @@
-# This script looks at employment growth both:
-# - in periods of low unemployment, and
-# - since 1980
-# It creates two graphics in the graphics folder.
-# It requires CES (for employment) and CPS (for unemployment rate) numbers.
-# Written by: Mike Konczal, Roosevelt Institute
-# Last Updated: 7/6/2021
 
-setwd("/Users/mkonczal/Documents/GitHub/BLS-CPS-Jobs-Numbers/")
+library(govMacroTools)
 library(tidyverse)
 library(ggtext)
 library(ggrepel)
@@ -14,7 +7,7 @@ library(scales)
 library(lubridate)
 
 ##### SET UP SOME THINGS #####
-#source(file = "1_a_load_bls_cps_jobs_data.R")
+#source(file = "scripts/01_load_cps_jobs.R")
 #source(file = "1_b_load_bls_ces_jobs_data.R")
 #source(file = "1_c_load_bls_ces_wages_data.R")
 #load("data/cps_jobs_data.RData")

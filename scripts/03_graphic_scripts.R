@@ -17,27 +17,60 @@ library(gt)
 library(hrbrthemes)
 
 
+library(ggplot2)
+library(grid)  # for unit()
 
-theme_lass <-   theme_modern_rc() + theme(legend.position = "none", legend.title = element_blank(),
-                                          panel.grid.major.y = element_line(size=0.5),
-                                          panel.grid.minor.y = element_blank(),
-                                          plot.title.position = "plot",
-                                          axis.title.x = element_blank(),
-                                          axis.title.y = element_blank(),
-                                          plot.title = element_text(size = 25, face="bold"),
-                                          plot.subtitle = element_text(size=15, color="white"),
-                                          plot.caption = element_text(size=10, face="italic"),
-                                          legend.text = element_text(size=12),
-                                          axis.text.y = element_text(size=12, face="bold"),
-                                          axis.text.x = element_text(size=12, face="bold"),
-                                          strip.text = element_text(face = "bold", color="white", hjust = 0.5, size = 10),
-                                          strip.background = element_blank()) +
-  theme(text = element_text(family = "Larsseit"),
-        plot.title = element_text(family = "Larsseit"),
-        plot.subtitle = element_text(family = "Larsseit"),
-        plot.caption = element_text(family="Larsseit"),
-        strip.text = element_text(family="Larsseit"))
+# 1. Custom ggplot2 theme
+theme_esp <- function(base_family = "Public Sans") {
+  theme_minimal(base_family = base_family) +
+    theme(
+      # Background
+      plot.background = element_rect(fill = "#f4f2e4", color = NA),
+      panel.background = element_rect(fill = "#f4f2e4", color = NA),
+      
+      # Remove gridlines
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      
+      # Axis lines and ticks
+      axis.line = element_line(color = "black", size = 0.5),
+      axis.ticks = element_line(color = "black", size = 0.5),
+      axis.ticks.length = unit(5, "pt"),
+      
+      # Titles and text styling
+      plot.title = element_text(size = 25, face = "bold", family = base_family, color = "black"),
+      plot.subtitle = element_text(size = 15, family = base_family, color = "black"),
+      plot.caption = element_text(size = 10, face = "italic", family = base_family, color = "black"),
+      axis.text = element_text(size = 12, face = "bold", family = base_family, color = "black"),
+      strip.text = element_text(face = "bold", size = 10, hjust = 0.5, family = base_family, color = "black"),
+      
+      # Remove legend title and axis titles
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      legend.position = "none",
+      legend.title = element_blank(),
+      legend.text = element_text(size = 12, family = base_family, color = "black"),
+      
+      # Title alignment
+      plot.title.position = "plot"
+    )
+}
 
+# 2. ESP color palette
+esp_colors <- c(
+  "Warm Navy" = "#2c3254",
+  "Warm Red"  = "#ff8361",
+  "Soft Green" = "#70ad8f"
+)
+
+# 3. Discrete color scale
+scale_color_esp <- function(...) {
+  scale_color_manual(values = esp_colors, ...)
+}
+
+scale_fill_esp <- function(...) {
+  scale_fill_manual(values = esp_colors, ...)
+}
 
 
 total_jobs_graphic <- function(ces_data, graphic_title = "Default title", length = 3) {
@@ -262,18 +295,21 @@ unemployment_rate_by_type <- function(cps_jobs_data, graphic_title = "Default ti
     ggplot(aes(date,value, color=series_title,label=label_percent()(round(last_value,3)))) +
     geom_line(size=1.2) +
     #geom_point(size=2) +
-    theme_lass + facet_wrap(~series_title, scales = "free") +
+    theme_esp() +
+    facet_wrap(~series_title, scales = "free") +
     scale_y_continuous(labels = percent) +
     scale_x_date(date_labels = "%b\n%Y", breaks=g_dates) +
     labs(title=graphic_title,
          subtitle="Unemployment rate contribution, by category of unemployment. Dotted line is average 2019 value.",
          caption="BLS, CPS, Seasonally-Adjusted, Mike Konczal") +
-    scale_color_manual(values=c("#6EA4BF","#2D779C", "#97BC56","#E2E47E")) +
+    scale_color_manual(values=c("#2c3254","#2D779C", "#ff8361","#70ad8f")) +
     geom_line(aes(date,pre_value,color=series_title), linetype="dashed") +
     theme(strip.text.x = element_text(size = 15))
     #geom_text(show.legend=FALSE, nudge_x = 50, size = 5)
   
 }
+
+
 
 draw_u_duration <- function(cps_jobs_data, graphic_title = "Default graphic.") {
 
@@ -357,7 +393,7 @@ three_six_wages <- function(ces_data, graphic_title = "Wages trend default title
       subtitle = paste("Annualized, monthly average hourly earnings of all employees, total private.\nBars are 1-month annualized. Dotted line represents 2018-2019 value of ", round(100 * pre_AHE, 1), "%.", sep = ""), # , round(pre_core,3)*100, "%.", sep=""),
       caption = "Dotted line is annualized, BLS, Author's calculations. Mike Konczal, Roosevelt Institute."
     ) +
-    theme_lass +
+    theme_esp() +
     geom_hline(yintercept = pre_AHE, linetype = "dashed", color = "#A4CCCC") +
     scale_fill_brewer(palette = "Paired") +
     theme(panel.grid.major.y = element_line(size = 0.5)) +
@@ -468,4 +504,56 @@ industry_timeline <- ces_data %>%
                align = "left") %>%
     gtsave(., filename="graphics/jobs_chart.png")
   
+}
+
+
+
+make_date <- function(x){
+  x$date <- as.Date(paste(x$month, "01", x$year, sep="/"), "%m/%d/%Y")
+  return(x)
+}
+
+
+
+
+
+make_Sahm <- function(df) {
+  # Make sure your data are sorted by date
+  df <- df[order(df$date), ]
+  
+  # 1. Compute the 3-month moving average of the unemployment rate.
+  #    This moving average is aligned to the right (i.e. the average of the current and previous two months).
+  df$unemp_ma3 <- rollapply(
+    df$unemployment,
+    width = 3,
+    FUN = mean,
+    align = "right",
+    fill = NA
+  )
+  
+  # 2. For each month, compute the minimum 3-month moving average over the past 12 months.
+  #    Again, aligned to the right (so it considers the current month and the previous 11 months).
+  df <- df %>%
+    mutate(
+      unemp_ma3_lag1 = lag(unemp_ma3, 1),
+      min_ma12 = rollapply(
+        unemp_ma3_lag1,
+        width = 12,
+        FUN = min,
+        align = "right",
+        fill = NA
+      )
+    )
+  
+  # 3. Calculate the difference between the current 3-month moving average and the minimum of the last 12 months.
+  df$diff <- df$unemp_ma3 - df$min_ma12
+  
+  # 4. Check whether the Sahm Rule is triggered: diff >= 0.5
+  df$sahm_trigger <- df$diff >= 0.5
+  
+  # 5. Optionally, calculate how many percentage points are still needed to trigger the rule.
+  #    (If the value is negative, the threshold hasn't been reached yet.)
+  df$gap_to_trigger <- 0.5 - df$diff
+  
+  return(df)
 }
