@@ -6,7 +6,7 @@ graphic_duration_title <- "Unemployment Duration Picks Up, Near 2019 Levels"
 g_dates <- cps_jobs_data %>% filter(date >= "2017-01-01")
 g_dates <- unique(g_dates$date)
 g_dates <- sort(g_dates, decreasing = TRUE)
-g_dates <- g_dates[seq(1, length(g_dates), 12)]
+g_dates <- g_dates[seq(1, length(g_dates), 6)]
 
 u_duration_series <- c("(Seas) Median Weeks Unemployed", "(Seas) Average Weeks Unemployed")
 

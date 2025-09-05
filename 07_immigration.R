@@ -1,13 +1,22 @@
 
 # Native born unemployment ----
+#Look at immigration
+unique(cps_jobs_data$born_text)
+max_date <- max(cps_jobs_data$date, na.rm = TRUE)
 
+nt_series <- cps_jobs_data %>% filter(date >= max_date %m-% months(1)) %>%
+  filter(born_text == "Native born") %>%
+  distinct(series_title)
+
+#View(nt_series)
+
+# unrate foreign born: LNU04073395
 cps_jobs_data %>%
-  filter(series_id %in% c("LNU04073413","LNU04073395")) %>%
+  filter(series_id %in% c("LNU04073413")) %>%
   ggplot(aes(date, value, color=series_title)) +
   geom_line(show.legend = FALSE) +
   labs(subtitle = "(Unadj) Unemployment Rate - Native born") +
-  theme_classic(base_size = 20) +
-  facet_wrap(~series_title)
+  theme_classic(base_size = 20) 
 
 ggsave("graphics/g10_native_unrate.png", width = 12, height = 9, dpi = "retina")
 
