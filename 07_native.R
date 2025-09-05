@@ -55,14 +55,14 @@ df_sa <- bind_rows(unrate_native, prime_epop_native) %>%
   )
 
 # --- ESP colors (dynamic mapping) ---
-esp_colors <- df %>%
+esp_colors <- df_sa %>%
   distinct(series_title) %>%
   mutate(col = ifelse(str_detect(series_title, regex("unemployment", ignore_case = TRUE)),
     esp_navy, "#ff8361"
   )) %>%
   deframe()
 
-df <- bind_rows(unrate_native, prime_epop_native) %>%
+df_native <- bind_rows(unrate_native, prime_epop_native) %>%
   filter(year(date) >= 2021)
 
 
@@ -71,7 +71,7 @@ MI_dates <- sort(unique(df$date), decreasing = TRUE)
 MI_dates <- MI_dates[seq(1, length(MI_dates), 12)]
 
 # --- Last value per series for dotted horizontal reference line ---
-last_vals <- df %>%
+last_vals <- df_native %>%
   group_by(series_title) %>%
   summarise(
     min_date = min(date, na.rm = TRUE),
@@ -82,7 +82,7 @@ last_vals <- df %>%
   )
 
 # --- Plot: NSA only; dotted segment to last_date + value label ---
-ggplot(df, aes(date, value, color = series_title)) +
+ggplot(df_native, aes(date, value, color = series_title)) +
   theme_esp() +
   geom_line(aes(linetype = "Series"), linewidth = 1.2) +
   # dotted horizontal segment that stops at each series' last_date

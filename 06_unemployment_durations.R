@@ -1,5 +1,5 @@
 
-graphic_duration_title <- "Unemployment Duration Picks Up, Near 2019 Levels"
+graphic_duration_title <- "Unemployment Duration Picks Up, Above 2019 Levels"
 
 
 #### Graphic 1: Duration Length of Unemployment ####

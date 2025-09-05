@@ -40,7 +40,6 @@ ces_data %>%
   filter(display_level == 2) %>%
   filter(seasonal == "S") %>%
   filter(data_type_code == 1) %>%
-  filter()
   group_by(industry_name) %>%
   reframe(date = date,
   change = value - lag(value, 1),
@@ -244,67 +243,4 @@ ggplot(chg_2025, aes(x = month_lab, y = m_change)) +
   theme(
     plot.title = element_text(face = "bold", size = 16),
     axis.text.x = element_text(vjust = 1)
-  )
-
-# Optional: fix extremes if a few outliers dominate the scale
-# lims <- quantile(chg_2025$m_change, c(0.01, 0.99), na.rm = TRUE)
-# + coord_cartesian(ylim = lims)
-
-
-
-
-
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-
-max_month <- month(max(ces_data$date, na.rm = TRUE))
-month_spread <- c((max_month - 3):max_month)
-
-
-industry_changes <- ces_data %>%
-  filter(display_level == 2,
-         seasonal == "S",
-         data_type_code == 1) %>%
-  group_by(industry_name) %>%
-  mutate(change = value - lag(value)) %>%
-  # last 4 months ending max_date, years 2024+
-  filter(month(date) %in% ((max_month - 3):max_month),
-         year(date) >= 2024) %>%
-  group_by(industry_name, yr = year(date)) %>%
-  summarise(avg_change = mean(change, na.rm = TRUE), .groups = "drop") %>%
-  tidyr::pivot_wider(names_from = yr, values_from = avg_change) %>%
-  mutate(diff = `2025` - `2024`) %>%
-  arrange(diff)
-
-# Build subtitle that explains the 4-month window up to max_date
-sub_txt <- paste0(
-  "Slowdown = 2025 average minus 2024 average over the last 4 months, ",
-  "ending {format(max_date, '%B %Y')}"
-)
-
-ggplot(industry_changes, aes(x = reorder(industry_name, diff), y = diff)) +
-  geom_col(fill = "#2c3254") +  # ESP navy
-  coord_flip(clip = "off") +
-  # Put labels just outside the bars
-  geom_text(
-    aes(
-      label = round(diff, 1),
-      hjust = ifelse(diff < 0, -0.15, 1.15)  # after flip: left of neg bars, right of pos bars
-    ),
-    color = "#2c3254",
-    size = 3.6
-  ) +
-  # Add room so outside labels are visible
-  scale_y_continuous(expand = expansion(mult = c(0.12, 0.12))) +
-  labs(
-    title = "Change in Average Monthly Job Growth, 2025 vs 2024",
-    subtitle = sub_txt,
-    x = NULL,
-    y = "Difference (2025 2024), avg monthly jobs"
-  ) +
-  theme_esp() +
-  theme(
-    panel.grid.major.y = element_blank(),
-    plot.margin = margin(10, 30, 10, 30) # extra room for outside labels
   )

@@ -1,14 +1,12 @@
 library(tidyverse)
 library(ggtext)
 library(blsR)
-library(govMacroTools)
 library(scales)
 library(zoo)
 library(tidyverse)
-library(govMacroTools)
 library(lubridate)
 library(viridis)
-source("scripts/03_graphic_scripts.R")
+source("scripts/graphic_scripts.R")
 
 
 young_unrate <- get_n_series_table(

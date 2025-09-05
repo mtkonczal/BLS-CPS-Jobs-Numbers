@@ -382,11 +382,11 @@ make_jobs_chart <- function(ces_data) {
     group_by(industry_name) %>%
     reframe(
       change = value[date == max(date)] - value[date == max(date) %m-% months(1)],
-      change_previous_2 = value[date == max(date) %m-% months(1)] - value[date == max(date) %m-% months(3)],
+      change_previous_3 = value[date == max(date) %m-% months(1)] - value[date == max(date) %m-% months(4)],
       change2024 = value[date == "2024-12-01"] - value[date == "2023-12-01"],
       series_id = series_id[date == max(date)]
     ) %>%
-    mutate(change_previous_2 = round(change_previous_2/2),
+    mutate(change_previous_3 = round(change_previous_3/3),
            change2024 = round(change2024/12))
   
   jobs_chart <- jobs_chart %>%
@@ -414,7 +414,7 @@ make_jobs_chart <- function(ces_data) {
                subtitle = "All numbers in thousands, averaged for time period") %>%
     cols_label(
       change = "Last-Month",
-      change_previous_2 = "May and June, 2025",
+      change_previous_3 = "May to July, 2025",
       change2024 = "2024 Annual",
       industry_name = ""
     ) %>%
@@ -423,8 +423,8 @@ make_jobs_chart <- function(ces_data) {
     ) %>%
     opt_stylize(style = 6, color = "cyan") %>%
     tab_spanner(
-      label = "Employment Change",
-      columns = c(change, change_previous_2, change2024)
+      label = "Employment Change (avg)",
+      columns = c(change, change_previous_3, change2024)
     ) %>%
     sub_missing(missing_text = "") %>%
     gtsave(., filename="graphics/jobs_chart.png")
