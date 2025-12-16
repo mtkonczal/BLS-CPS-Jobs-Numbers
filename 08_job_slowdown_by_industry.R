@@ -16,14 +16,11 @@ max_month <- month(max_date)
 month_spread <- (max_month - 3):max_month
 
 industry_changes <- ces_data %>%
-  filter(display_level == 2,
-         seasonal == "S",
-         data_type_code == 1) %>%
+  filter(display_level == 2, seasonal == "S", data_type_code == 1) %>%
   group_by(industry_name) %>%
   mutate(change = value - lag(value)) %>%
   # last 4 months (by month-of-year) in each year since 2024
-  filter(month(date) %in% month_spread,
-         year(date) >= 2024) %>%
+  filter(month(date) %in% month_spread, year(date) >= 2024) %>%
   group_by(industry_name, yr = year(date)) %>%
   summarise(avg_change = mean(change, na.rm = TRUE), .groups = "drop") %>%
   tidyr::pivot_wider(names_from = yr, values_from = avg_change) %>%
@@ -37,7 +34,7 @@ sub_txt <- sprintf(
 )
 
 ggplot(industry_changes, aes(x = reorder(industry_name, diff), y = diff)) +
-  geom_col(fill = "#2c3254") +  # ESP navy
+  geom_col(fill = "#2c3254") + # ESP navy
   coord_flip(clip = "off") +
   # Labels just OUTSIDE the bar ends:
   # - positive bars: to the RIGHT (hjust < 0)
@@ -45,7 +42,7 @@ ggplot(industry_changes, aes(x = reorder(industry_name, diff), y = diff)) +
   geom_text(
     aes(
       label = number(diff, accuracy = 0.1, big.mark = ","),
-      hjust  = ifelse(diff >= 0, -0.15, 1.15)
+      hjust = ifelse(diff >= 0, -0.15, 1.15)
     ),
     color = "#2c3254",
     size = 3.6
@@ -60,7 +57,7 @@ ggplot(industry_changes, aes(x = reorder(industry_name, diff), y = diff)) +
     subtitle = sub_txt,
     x = NULL,
     y = "Difference (2025 − 2024), avg monthly jobs",
-    caption = "Mike Konczal"
+    caption = "Mike Konczal, Economic Security Project."
   ) +
   theme_esp() +
   theme(
@@ -68,5 +65,10 @@ ggplot(industry_changes, aes(x = reorder(industry_name, diff), y = diff)) +
     plot.margin = margin(10, 30, 10, 30) # extra room for outside labels
   )
 
-ggsave("graphics/g99_slowdown_by_industry.png",
-       dpi = "retina", width = 12, height = 6.75, units = "in")
+ggsave(
+  "graphics/g99_slowdown_by_industry.png",
+  dpi = "retina",
+  width = 12,
+  height = 6.75,
+  units = "in"
+)

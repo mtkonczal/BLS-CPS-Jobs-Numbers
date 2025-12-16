@@ -229,18 +229,104 @@ chg_2025 <- chg %>%
 chg_2025 <- chg_2025 %>%
   mutate(month_lab = fct_inorder(format(date, "%b")))
 
-# 4) Boxplots: one box per month, across *all* industries
 ggplot(chg_2025, aes(x = month_lab, y = m_change)) +
   geom_boxplot(outliers = FALSE, width = 0.7, fill = "#70ad8f") +
   labs(
     title = "Distribution of Industry Monthly Job Changes (2025)",
-    subtitle = "Each box is the across-industry distribution for that month",
+    subtitle = "Each box is the across-industry distribution for that month, 250 diffusion index subindustries",
     x = NULL,
-    y = "Monthly Job Change"
+    y = "Monthly Job Change",
+    caption = "Mike Konczal"
   ) +
-  scale_y_continuous(labels = comma) +
-  (if (exists("theme_esp")) theme_esp() else theme_minimal(base_family = "Public Sans")) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal(base_family = "Public Sans") +
   theme(
     plot.title = element_text(face = "bold", size = 16),
     axis.text.x = element_text(vjust = 1)
   )
+
+chg_2025 %>%
+  group_by(date) %>%
+  reframe(median(m_change))
+
+
+
+
+ jg <- ces_data %>% filter(seasonal == "S", data_type_code == 1) %>%
+   filter(industry_name %in% cesDiffusionIndex$industry_title) %>%
+   group_by(industry_name) %>%
+   reframe(date = date,
+  change3 = value - lag(value, 3)) %>%
+   ungroup() %>%
+   filter(date == max(date) %m-% months(1) | date == "2025-03-01")
+
+
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# industry-level changes at two dates
+jg_dist <- ces_data %>%
+  filter(seasonal == "S", data_type_code == 1) %>%
+  filter(industry_name %in% cesDiffusionIndex$industry_title) %>%
+  group_by(industry_name) %>%
+  reframe(date = date,
+          change3 = value - lag(value, 3)) %>%
+  ungroup() %>%
+  filter(date %in% c(as.Date("2025-03-01"), max(date) %m-% months(1)))
+
+# histogram by date
+ggplot(jg_dist, aes(x = change3, fill = as.factor(date))) +
+  geom_histogram(alpha = 0.6, position = "identity", bins = 50) +
+  scale_fill_manual(values = c("#2c3254", "#ff8361")) +
+  labs(
+    title = "Distribution of 3-Month Job Changes Across Industries",
+    subtitle = "Comparing Dec 2024 vs Latest Available",
+    x = "3-Month Change",
+    y = "Number of Industries",
+    fill = "Date"
+  ) +
+  theme_minimal(base_family = "Public Sans")
+
+# density plot (alternative)
+ggplot(jg_dist, aes(x = change3, color = as.factor(date), fill = as.factor(date))) +
+  geom_density(alpha = 0.3) +
+  scale_color_manual(values = c("#2c3254", "#ff8361")) +
+  scale_fill_manual(values = c("#2c3254", "#ff8361")) +
+  labs(
+    title = "Density of 3-Month Job Changes Across Industries",
+    subtitle = "Comparing Dec 2024 vs Latest Available",
+    x = "3-Month Change",
+    y = "Density",
+    color = "Date",
+    fill = "Date"
+  ) +
+  theme_minimal(base_family = "Public Sans")
+
+
+library(dplyr)
+library(ggplot2)
+
+jg_cdf <- ces_data %>%
+  filter(seasonal == "S", data_type_code == 1) %>%
+  filter(industry_name %in% cesDiffusionIndex$industry_title) %>%
+  group_by(industry_name) %>%
+  reframe(date = date,
+          change3 = value - lag(value, 3)) %>%
+  ungroup() %>%
+  filter(date %in% c(as.Date("2025-03-01"), max(date) %m-% months(1)))
+
+ggplot(jg_cdf, aes(x = change3, color = as.factor(date))) +
+  stat_ecdf(size = 1.2) +
+  scale_color_manual(values = c("#2c3254", "#ff8361")) +
+  labs(
+    title = "Cumulative Distribution of 3-Month Job Changes Across Industries",
+    subtitle = "Share of 250 diffusion index subindustries at or below a given change",
+    x = "3-Month Change",
+    y = "Cumulative Share of Industries",
+    color = "Date",
+    caption = "Mike Konczal"
+  ) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_minimal(base_family = "Public Sans") +
+  theme(plot.title.position = "plot")

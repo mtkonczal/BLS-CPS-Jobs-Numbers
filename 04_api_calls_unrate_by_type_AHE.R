@@ -19,27 +19,59 @@ bls_set_key(bls_api)
 
 
 unrate_types_raw <- get_n_series_table(
-  c("LNS13023705","LNS11000000","LNS13023557","LNS13023569", "LNS13023653","LNS13025699", "CES0500000003"),
+  c(
+    "LNS13023705",
+    "LNS11000000",
+    "LNS13023557",
+    "LNS13023569",
+    "LNS13023653",
+    "LNS13025699",
+    "CES0500000003"
+  ),
   api_key = bls_get_key(),
   start_year = 2019,
   end_year = 2025,
   tidy = TRUE
 )
 
+unrate_types_raw <- unrate_types_raw %>%
+  mutate(
+    across(
+      -c(year, month),
+      as.numeric
+    )
+  )
+
 unrate_types <- unrate_types_raw %>%
-  mutate(date = as.Date(paste0(year,"/",month,"/",1))) %>%
+  mutate(date = as.Date(paste0(year, "/", month, "/", 1))) %>%
   select(-year, -month) %>%
-  pivot_longer(LNS13023705:CES0500000003, names_to = "series_id", values_to = "value")
+  pivot_longer(
+    LNS13023705:CES0500000003,
+    names_to = "series_id",
+    values_to = "value"
+  )
 
 
-unemployment_rate_by_type(unrate_types, graphic_title = title4_unrate_by_type, start_date = "2023-01-01", axis_months = 6)
-ggsave("graphics/g5_u_by_type.png", dpi = "retina", width = 12, height = 6.75, units = "in")
+unemployment_rate_by_type(
+  unrate_types,
+  graphic_title = title4_unrate_by_type,
+  start_date = "2023-01-01",
+  axis_months = 6
+)
+ggsave(
+  "graphics/g5_u_by_type.png",
+  dpi = "retina",
+  width = 12,
+  height = 6.75,
+  units = "in"
+)
 
 three_six_wages_title <- title5_ahe
 three_six_wages(unrate_types, three_six_wages_title)
-ggsave("graphics/g6_wages_3_6.png", dpi = "retina", width = 12, height = 8, units = "in")
-
-
-
-
-
+ggsave(
+  "graphics/g6_wages_3_6.png",
+  dpi = "retina",
+  width = 12,
+  height = 8,
+  units = "in"
+)

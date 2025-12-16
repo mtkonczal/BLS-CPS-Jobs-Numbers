@@ -5,13 +5,20 @@ library(tidyusmacro)
 source("scripts/graphic_scripts.R")
 
 
-
 # https://www.bls.gov/web/empsit/cesnaicsrev.htm
 ces_revisions <- read_csv("data/bls_ces_monthly_revisions.csv")
-format(ces_revisions %>% filter(!is.na(sa_1st)) %>% filter(date == max(date)) %>% pull(date), '%B, %Y')
+format(
+  ces_revisions %>%
+    filter(!is.na(sa_1st)) %>%
+    filter(date == max(date)) %>%
+    pull(date),
+  '%B, %Y'
+)
 
 
 source("01_api_calls_1st_unrate_jobs.R")
+source("01_api_health_care.R")
+source("01_api_goods_loglines.R")
 source("02_revisions_estimate.R")
 
 source("03_api_calls_1st_young_unrate.R")
@@ -19,13 +26,11 @@ source("04_a_immigration_unrate_api.R")
 source("04_api_calls_unrate_by_type_AHE.R")
 source("05_api_calls_flows_4_types.R")
 
-
-
+source("06_unemployment_durations.R")
+source("05_where_unrate_increased.R")
 
 # Remote work API call still.
 # source("08_remote_work.R")
-
-
 
 ces_data <- getBLSFiles("ces", "rortybomb@gmail.com")
 ces_data$data_type_code_org <- ces_data$data_type_code
@@ -35,11 +40,3 @@ ces_data$data_type_code <- as.numeric(ces_data$data_type_code)
 source("06_cyclical_industries.R")
 make_jobs_chart(ces_data)
 source("08_job_slowdown_by_industry.R")
-
-
-cps_jobs_data <- getBLSFiles("cps", "rortybomb@gmail.com")
-# Two calls that use CPS.
-source("06_unemployment_durations.R")
-source("07_immigration.R")
-source("07_native.R")
-

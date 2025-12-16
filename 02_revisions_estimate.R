@@ -5,7 +5,7 @@ library(ggplot2)
 
 
 graphic_title_revisions <- "Job Revisions Turned Negative in Recent Months"
-how_many_months <- 6
+how_many_months <- 7
 
 df <- read_csv("data/bls_ces_monthly_revisions.csv")
 
@@ -27,7 +27,9 @@ df_long <- df %>%
       labels = month.abb[start_m:latest_m],
       ordered = TRUE
     ),
-    sa_1st, sa_2nd, sa_3rd
+    sa_1st,
+    sa_2nd,
+    sa_3rd
   ) %>%
   pivot_longer(starts_with("sa_"), names_to = "estimate", values_to = "jobs")
 
@@ -45,7 +47,11 @@ ggplot(df_long, aes(x = month, y = jobs, fill = estimate)) +
     fontface = "bold"
   ) +
   scale_fill_manual(
-    values = c("sa_1st" = "#2c3254", "sa_2nd" = "#70ad8f", "sa_3rd" = "#ff8361"),
+    values = c(
+      "sa_1st" = "#2c3254",
+      "sa_2nd" = "#70ad8f",
+      "sa_3rd" = "#ff8361"
+    ),
     labels = c("1st Estimate", "2nd Estimate", "3rd Estimate"),
     name = NULL
   ) +
@@ -53,12 +59,17 @@ ggplot(df_long, aes(x = month, y = jobs, fill = estimate)) +
   labs(
     subtitle = "Total Nonfarm Jobs: 1st, 2nd, and 3rd Estimates (Latest 5 Months of 2025)",
     title = graphic_title_revisions,
-    x = "The Year 2025", y = "Jobs (thousands)",
-    caption = "Mike Konczal"
+    x = "The Year 2025",
+    y = "Jobs (thousands)",
+    caption = "Source: BLS. Mike Konczal, Economic Security Project."
   ) +
   theme_esp() +
-  theme(legend.position = "top",
-axis.text = ggplot2::element_text(size = 20)
-)
+  theme(legend.position = "top", axis.text = ggplot2::element_text(size = 20))
 
-ggsave("graphics/g0_job_revisions.png", dpi = "retina", width = 12, height = 6.75, units = "in")
+ggsave(
+  "graphics/g0_job_revisions.png",
+  dpi = "retina",
+  width = 12,
+  height = 6.75,
+  units = "in"
+)

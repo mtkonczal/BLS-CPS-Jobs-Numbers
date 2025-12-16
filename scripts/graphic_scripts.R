@@ -1,12 +1,3 @@
-# This script looks at employment growth both:
-# - in periods of low unemployment, and
-# - since 1980
-# It creates two graphics in the graphics folder.
-# It requires CES (for employment) and CPS (for unemployment rate) numbers.
-# Written by: Mike Konczal, Roosevelt Institute
-# Last Updated: 7/6/2021
-
-
 library(tidyverse)
 library(ggtext)
 library(ggrepel)
@@ -18,12 +9,12 @@ library(hrbrthemes)
 
 
 library(ggplot2)
-library(grid)  # for unit()
+library(grid) # for unit()
 
 # 2. ESP color palette
 esp_colors <- c(
   "Warm Navy" = "#2c3254",
-  "Warm Red"  = "#ff8361",
+  "Warm Red" = "#ff8361",
   "Soft Green" = "#70ad8f"
 )
 
@@ -37,7 +28,11 @@ scale_fill_esp <- function(...) {
 }
 
 
-total_jobs_graphic <- function(ces_data, graphic_title = "Default title", length = 3) {
+total_jobs_graphic <- function(
+  ces_data,
+  graphic_title = "Default title",
+  length = 3
+) {
   ces_dates <- unique(ces_data$date)
   ces_dates <- sort(ces_dates, decreasing = TRUE)
   ces_dates <- ces_dates[seq(1, length(ces_dates), 3)]
@@ -46,8 +41,18 @@ total_jobs_graphic <- function(ces_data, graphic_title = "Default title", length
     filter(series_id == "CES0000000001") %>%
     arrange(date) %>%
     mutate(jobs_difference = value - lag(value, 1)) %>%
-    mutate(jobs_difference_label = if_else(date >= max(date, na.rm = TRUE) %m-% months(6), jobs_difference, as.numeric(NA))) %>%
-    mutate(before_trend = (value[date == "2020-01-01"] - value[date == "2018-01-01"]) / 24) %>%
+    mutate(
+      jobs_difference_label = if_else(
+        date >= max(date, na.rm = TRUE) %m-% months(6),
+        jobs_difference,
+        as.numeric(NA)
+      )
+    ) %>%
+    mutate(
+      before_trend = (value[date == "2020-01-01"] -
+        value[date == "2018-01-01"]) /
+        24
+    ) %>%
     filter(date >= "2021-01-01")
 
   avg_job_growth <- mean(jobs_growth$before_trend)
@@ -62,24 +67,37 @@ total_jobs_graphic <- function(ces_data, graphic_title = "Default title", length
       y = NULL,
       x = NULL,
       title = graphic_title,
-      subtitle = paste("Total job growth, employment survey, seasonally-adjusted. Red line reflects 2018-19 average growth of ", avg_job_growth, " thousand.", sep = ""),
+      subtitle = paste(
+        "Total job growth, employment survey, seasonally-adjusted. Red line reflects 2018-19 average growth of ",
+        avg_job_growth,
+        " thousand.",
+        sep = ""
+      ),
       caption = "BLS, CES, seasonally adjusted values. Author's calculation. Mike Konczal"
     ) +
     scale_x_date(date_labels = "%b\n%Y", breaks = ces_dates)
 }
 
 
-detailed_compare_2019 <- function(ces_data, graphic_title = "Top 10 Job Growers/Losers Since 2019 of 241 Industries, in Thousands"){
-
-  compare_2019 <- ces_data %>% filter(seasonal == "S", (display_level == 5), data_type_code == 1) %>% group_by(industry_name) %>%
-    summarize(before = value[date == "2019-12-01"],
-              after = value[date == max(date)]) %>%
-    mutate(difference = after - before,
-           months_category = "Since End of 2019",
-           difference_label = round(difference),
-           positive = difference_label >= 0) %>%
+detailed_compare_2019 <- function(
+  ces_data,
+  graphic_title = "Top 10 Job Growers/Losers Since 2019 of 241 Industries, in Thousands"
+) {
+  compare_2019 <- ces_data %>%
+    filter(seasonal == "S", (display_level == 5), data_type_code == 1) %>%
+    group_by(industry_name) %>%
+    summarize(
+      before = value[date == "2019-12-01"],
+      after = value[date == max(date)]
+    ) %>%
+    mutate(
+      difference = after - before,
+      months_category = "Since End of 2019",
+      difference_label = round(difference),
+      positive = difference_label >= 0
+    ) %>%
     ungroup()
-  
+
   top_10 <- compare_2019 %>%
     mutate(pos = difference > 0) %>%
     group_by(pos) %>%
@@ -88,35 +106,61 @@ detailed_compare_2019 <- function(ces_data, graphic_title = "Top 10 Job Growers/
     top_n(10, level) %>%
     ungroup() %>%
     select(industry_name)
-    
-  
+
   compare_2019 %>%
     filter(industry_name %in% top_10$industry_name) %>%
-    mutate(industry_name = str_replace_all(industry_name, "and other general merchandise", "and merchandise")) %>%
-    mutate(industry_name = reorder_within(industry_name, difference, months_category)) %>%
-    ggplot(aes(industry_name, difference, label=difference_label, fill=positive)) +
-    geom_col(size=0) +
+    mutate(
+      industry_name = str_replace_all(
+        industry_name,
+        "and other general merchandise",
+        "and merchandise"
+      )
+    ) %>%
+    mutate(
+      industry_name = reorder_within(industry_name, difference, months_category)
+    ) %>%
+    ggplot(aes(
+      industry_name,
+      difference,
+      label = difference_label,
+      fill = positive
+    )) +
+    geom_col(size = 0) +
     scale_x_reordered() +
     coord_flip() +
     theme_lass +
-    theme(panel.grid.major.x = element_line(size=0.5)) +
-    theme(panel.grid.major.y = element_line(size=0)) +
+    theme(panel.grid.major.x = element_line(size = 0.5)) +
+    theme(panel.grid.major.y = element_line(size = 0)) +
     theme(plot.title.position = "plot") +
-    labs(y = NULL,
-         x = NULL,
-         title = graphic_title,
-         subtitle = "Total Jobs growth last month versus Dec 2019, 5th-level detail category by occupations, employment survey, seasonally adjusted",
-         caption ="BLS, CES, seasonally adjusted values. Author's calculation. Mike Konczal") +
-    theme(axis.text.y = element_text(size=12, face="plain"),
-          legend.position = c(0.75,0.5)) +
-    geom_text(aes(y = difference_label + 40 * sign(difference_label), label = difference_label), color="white", size=6, ) +
+    labs(
+      y = NULL,
+      x = NULL,
+      title = graphic_title,
+      subtitle = "Total Jobs growth last month versus Dec 2019, 5th-level detail category by occupations, employment survey, seasonally adjusted",
+      caption = "BLS, CES, seasonally adjusted values. Author's calculation. Mike Konczal"
+    ) +
+    theme(
+      axis.text.y = element_text(size = 12, face = "plain"),
+      legend.position = c(0.75, 0.5)
+    ) +
+    geom_text(
+      aes(
+        y = difference_label + 40 * sign(difference_label),
+        label = difference_label
+      ),
+      color = "white",
+      size = 6,
+    ) +
     scale_y_continuous(position = "right") +
     theme(legend.position = "none") +
     theme(axis.text.y = element_text(size = 18))
-
 }
 
-double_jobs_chart <- function(ces_data, graphic_title = "Default Title", months_difference = 6) {
+double_jobs_chart <- function(
+  ces_data,
+  graphic_title = "Default Title",
+  months_difference = 6
+) {
   one_month <- ces_data %>%
     filter(seasonal == "S", (display_level == 2), data_type_code == 1) %>%
     group_by(industry_name) %>%
@@ -127,7 +171,12 @@ double_jobs_chart <- function(ces_data, graphic_title = "Default Title", months_
     mutate(difference = after - before, months_category = "Last 1 Month")
 
   one_month_total <- sum(one_month$difference)
-  one_month$months_category <- paste("Last 1 Month, ", one_month_total, " thousand jobs", sep = "")
+  one_month$months_category <- paste(
+    "Last 1 Month, ",
+    one_month_total,
+    " thousand jobs",
+    sep = ""
+  )
 
   double_jobs_graphic <- ces_data %>%
     filter(seasonal == "S", (display_level == 2), data_type_code == 1) %>%
@@ -136,11 +185,19 @@ double_jobs_chart <- function(ces_data, graphic_title = "Default Title", months_
       before = value[date == max(date) %m-% months(months_difference)],
       after = value[date == max(date)]
     ) %>%
-    mutate(difference = after - before, difference = difference / months_difference) %>%
+    mutate(
+      difference = after - before,
+      difference = difference / months_difference
+    ) %>%
     arrange(desc(difference))
 
   six_months_total <- sum(double_jobs_graphic$difference)
-  double_jobs_graphic$months_category <- paste("Last 6 Months, Average Monthly, ", round(six_months_total), " thousand jobs", sep = "")
+  double_jobs_graphic$months_category <- paste(
+    "Last 6 Months, Average Monthly, ",
+    round(six_months_total),
+    " thousand jobs",
+    sep = ""
+  )
 
   double_jobs_graphic <- double_jobs_graphic %>%
     rbind(one_month) %>%
@@ -148,8 +205,15 @@ double_jobs_chart <- function(ces_data, graphic_title = "Default Title", months_
     mutate(positive = difference_label >= 0)
 
   double_jobs_graphic %>%
-    mutate(industry_name = reorder_within(industry_name, difference, months_category)) %>%
-    ggplot(aes(industry_name, difference, label = difference_label, fill = positive)) +
+    mutate(
+      industry_name = reorder_within(industry_name, difference, months_category)
+    ) %>%
+    ggplot(aes(
+      industry_name,
+      difference,
+      label = difference_label,
+      fill = positive
+    )) +
     geom_col(size = 0) +
     scale_x_reordered() +
     facet_wrap(~months_category, scales = "free_y", ncol = 1) +
@@ -169,13 +233,24 @@ double_jobs_chart <- function(ces_data, graphic_title = "Default Title", months_
       axis.text.y = element_text(size = 12, face = "plain"),
       legend.position = c(0.75, 0.5)
     ) +
-    geom_text(aes(y = difference_label + 4 * sign(difference_label), label = difference_label), color = "white", size = 6, ) +
+    geom_text(
+      aes(
+        y = difference_label + 4 * sign(difference_label),
+        label = difference_label
+      ),
+      color = "white",
+      size = 6,
+    ) +
     scale_y_continuous(position = "right") +
     theme(legend.position = "none") +
     theme(strip.text.x = element_text(size = 15))
 }
 
-black_white_comparison <- function(cps_jobs_data, graphic_title = "Default Title", date_break_length = 36) {
+black_white_comparison <- function(
+  cps_jobs_data,
+  graphic_title = "Default Title",
+  date_break_length = 36
+) {
   b_w_breaks <- unique(cps_jobs_data$date)
   b_w_breaks <- sort(b_w_breaks, decreasing = TRUE)
   b_w_breaks <- b_w_breaks[seq(1, length(b_w_breaks), date_break_length)]
@@ -185,20 +260,43 @@ black_white_comparison <- function(cps_jobs_data, graphic_title = "Default Title
     group_by(date) %>%
     summarize(
       black_u = value[series_id == "LNS14000006"],
-      relative_diff = value[series_id == "LNS14000006"] / value[series_id == "LNS14000003"],
-      absolute_diff = value[series_id == "LNS14000006"] - value[series_id == "LNS14000003"]
+      relative_diff = value[series_id == "LNS14000006"] /
+        value[series_id == "LNS14000003"],
+      absolute_diff = value[series_id == "LNS14000006"] -
+        value[series_id == "LNS14000003"]
     ) %>%
-    pivot_longer(black_u:absolute_diff, names_to = "type", values_to = "values") %>%
+    pivot_longer(
+      black_u:absolute_diff,
+      names_to = "type",
+      values_to = "values"
+    ) %>%
     ungroup() %>%
     group_by(type) %>%
     mutate(dotted_line = values[date == max(date)]) %>%
     mutate(
       type = str_replace_all(type, "black_u", "Black Unemployment"),
-      type = str_replace_all(type, "absolute_diff", "Black Unemployment Minus White Unemployment"),
-      type = str_replace_all(type, "relative_diff", "Black Unemployment Divided By White Unemployment"),
+      type = str_replace_all(
+        type,
+        "absolute_diff",
+        "Black Unemployment Minus White Unemployment"
+      ),
+      type = str_replace_all(
+        type,
+        "relative_diff",
+        "Black Unemployment Divided By White Unemployment"
+      ),
     ) %>%
     ungroup() %>%
-    mutate(type_F = factor(type, levels = c("Black Unemployment", "Black Unemployment Minus White Unemployment", "Black Unemployment Divided By White Unemployment"))) %>%
+    mutate(
+      type_F = factor(
+        type,
+        levels = c(
+          "Black Unemployment",
+          "Black Unemployment Minus White Unemployment",
+          "Black Unemployment Divided By White Unemployment"
+        )
+      )
+    ) %>%
     mutate(values = values / 100, dotted_line = dotted_line / 100) %>%
     filter(year(date) > 2001) %>%
     ggplot(aes(date, values, color = type_F)) +
@@ -206,81 +304,148 @@ black_white_comparison <- function(cps_jobs_data, graphic_title = "Default Title
     geom_line(aes(date, dotted_line, color = type_F), linetype = "dashed") +
     theme_lass +
     theme(legend.position = c(0.25, 0.85)) +
-    labs(title = "Black-White Unemployment Gaps Among Lowest Levels Across Measures", caption = "Dotted Line is Last Value. BLS, CPS, Seasonally-Adujusted. Mike Konczal, Roosevelt Institute") +
+    labs(
+      title = "Black-White Unemployment Gaps Among Lowest Levels Across Measures",
+      caption = "Dotted Line is Last Value. BLS, CPS, Seasonally-Adujusted. Mike Konczal, Economic Security Project."
+    ) +
     scale_y_continuous(labels = percent) +
     scale_x_date(date_labels = "%B\n%Y", breaks = b_w_breaks)
-  
 }
 
-unemployment_rate_by_type <- function(cps_jobs_data, graphic_title = "Default title.", start_date = "2023-01-01", axis_months = 6){
-  job_leavers <- cps_jobs_data %>% filter(series_id %in% c("LNS13023705","LNS11000000")) %>%
+unemployment_rate_by_type <- function(
+  cps_jobs_data,
+  graphic_title = "Default title.",
+  start_date = "2023-01-01",
+  axis_months = 6
+) {
+  job_leavers <- cps_jobs_data %>%
+    filter(series_id %in% c("LNS13023705", "LNS11000000")) %>%
     group_by(date) %>%
-    reframe(better_percent = value[series_id == "LNS13023705"]/value[series_id == "LNS11000000"]) %>%
+    reframe(
+      better_percent = value[series_id == "LNS13023705"] /
+        value[series_id == "LNS11000000"]
+    ) %>%
     filter(!is.na(better_percent)) %>%
     mutate(series_title = "Job Leavers Unemployment Rate") %>%
     ungroup()
-  
-  entrants <- cps_jobs_data %>% filter(series_id %in% c("LNS13023557","LNS13023569","LNS11000000")) %>%
+
+  entrants <- cps_jobs_data %>%
+    filter(series_id %in% c("LNS13023557", "LNS13023569", "LNS11000000")) %>%
     group_by(date) %>%
-    reframe(better_percent = (value[series_id == "LNS13023557"]+value[series_id == "LNS13023569"])/value[series_id == "LNS11000000"]) %>%
+    reframe(
+      better_percent = (value[series_id == "LNS13023557"] +
+        value[series_id == "LNS13023569"]) /
+        value[series_id == "LNS11000000"]
+    ) %>%
     filter(!is.na(better_percent)) %>%
     mutate(series_title = "New Entrants and Reentrants") %>%
     ungroup()
-  
-  on_temporary_layoff <- cps_jobs_data %>% filter(series_id %in% c("LNS13023653","LNS11000000")) %>%
+
+  on_temporary_layoff <- cps_jobs_data %>%
+    filter(series_id %in% c("LNS13023653", "LNS11000000")) %>%
     group_by(date) %>%
-    reframe(better_percent = value[series_id == "LNS13023653"]/value[series_id == "LNS11000000"]) %>%
+    reframe(
+      better_percent = value[series_id == "LNS13023653"] /
+        value[series_id == "LNS11000000"]
+    ) %>%
     filter(!is.na(better_percent)) %>%
     mutate(series_title = "Job Losers on Temporary Layoff") %>%
     ungroup()
-  
-  not_on_temporary_layoff <- cps_jobs_data %>% filter(series_id %in% c("LNS13025699","LNS11000000")) %>%
+
+  not_on_temporary_layoff <- cps_jobs_data %>%
+    filter(series_id %in% c("LNS13025699", "LNS11000000")) %>%
     group_by(date) %>%
-    reframe(better_percent = value[series_id == "LNS13025699"]/value[series_id == "LNS11000000"]) %>%
+    reframe(
+      better_percent = value[series_id == "LNS13025699"] /
+        value[series_id == "LNS11000000"]
+    ) %>%
     filter(!is.na(better_percent)) %>%
     mutate(series_title = "Job Losers Not on Temporary Layoff") %>%
     ungroup()
-  
-  urate_mine <- rbind(job_leavers,entrants,on_temporary_layoff,not_on_temporary_layoff) %>% group_by(date) %>% summarize(this_u_rate_works_maybe = sum(better_percent)) %>% ungroup()
+
+  urate_mine <- rbind(
+    job_leavers,
+    entrants,
+    on_temporary_layoff,
+    not_on_temporary_layoff
+  ) %>%
+    group_by(date) %>%
+    summarize(this_u_rate_works_maybe = sum(better_percent)) %>%
+    ungroup()
   year_delay <- start_date
-  
+
   g_dates <- unique(job_leavers$date)
   g_dates <- sort(g_dates, decreasing = TRUE)
   g_dates <- g_dates[seq(1, length(g_dates), axis_months)]
-  
-  rbind(job_leavers,entrants,on_temporary_layoff,not_on_temporary_layoff) %>%
+
+  plot_data <- rbind(
+    job_leavers,
+    entrants,
+    on_temporary_layoff,
+    not_on_temporary_layoff
+  ) %>%
     rename(value = better_percent) %>%
     group_by(series_title) %>%
-    mutate(pre_value = mean(value[year(date)==2019])) %>%
-    mutate(last_value = if_else(date == max(date), value, as.numeric(NA))) %>%
+    mutate(pre_value = mean(value[year(date) == 2024])) %>%
     ungroup() %>%
-    mutate(pre_value = if_else(year(date)>=2019,pre_value,as.numeric(NA))) %>%
-    filter(date >= year_delay) %>%
-    ggplot(aes(date,value, color=series_title,label=label_percent()(round(last_value,3)))) +
-    geom_line(size=1.2) +
-    #geom_point(size=2) +
-    theme_esp() +
+    mutate(pre_value = if_else(year(date) >= 2019, pre_value, NA_real_)) %>%
+    filter(date >= year_delay)
+
+  last_labels <- plot_data %>%
+    group_by(series_title) %>%
+    slice_max(date, n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    mutate(
+      label = percent(value, accuracy = 0.01),
+      label_date = date + days(5)
+    )
+
+  ggplot(plot_data, aes(date, value, color = series_title)) +
+    geom_line(size = 1.2) +
+    geom_line(
+      aes(y = pre_value),
+      size = 1.2,
+      linetype = "dashed"
+    ) +
+    geom_text(
+      data = last_labels,
+      aes(x = label_date, y = value, label = label, color = series_title),
+      inherit.aes = FALSE,
+      hjust = 0,
+      size = 4,
+      show.legend = FALSE
+    ) +
     facet_wrap(~series_title, scales = "free") +
     scale_y_continuous(labels = percent) +
-    scale_x_date(date_labels = "%b\n%Y", breaks=g_dates) +
-    labs(title=graphic_title,
-         subtitle="Unemployment rate contribution, by category of unemployment. Dotted line is average 2019 value.",
-         caption="BLS, CPS, Seasonally-Adjusted, Mike Konczal") +
-    scale_color_manual(values=c("#2c3254","#2D779C", "#ff8361","#70ad8f")) +
-    geom_line(aes(date,pre_value,color=series_title), linetype="dashed") +
-    theme(strip.text.x = element_text(size = 15))
-    #geom_text(show.legend=FALSE, nudge_x = 50, size = 5)
-  
+    scale_x_date(
+      date_labels = "%b\n%Y",
+      breaks = g_dates,
+      expand = expansion(mult = c(0.02, 0.12)) # room for labels
+    ) +
+    scale_color_manual(
+      values = c("#2c3254", "#2D779C", "#ff8361", "#70ad8f")
+    ) +
+    labs(
+      title = graphic_title,
+      subtitle = "Unemployment rate contribution, by category of unemployment. Dotted line is average 2024 value.",
+      caption = "BLS, CPS, Seasonally Adjusted, Mike Konczal"
+    ) +
+    theme_esp() +
+    theme(
+      strip.text.x = element_text(size = 15),
+      plot.margin = margin(5.5, 40, 5.5, 5.5)
+    )
 }
 
 
-
 draw_u_duration <- function(cps_jobs_data, graphic_title = "Default graphic.") {
-
   g_dates <- sort(unique(cps_jobs_data$date), decreasing = TRUE)
   g_dates <- g_dates[seq(1, length(g_dates), 12)]
 
-  u_duration_series <- c("(Seas) Median Weeks Unemployed", "(Seas) Average Weeks Unemployed")
+  u_duration_series <- c(
+    "(Seas) Median Weeks Unemployed",
+    "(Seas) Average Weeks Unemployed"
+  )
 
   cps_jobs_data %>%
     filter(series_title %in% u_duration_series, periodicity_code == "M") %>%
@@ -288,7 +453,9 @@ draw_u_duration <- function(cps_jobs_data, graphic_title = "Default graphic.") {
     mutate(pre_value = mean(value[year(date) == 2019])) %>%
     mutate(last_value = if_else(date == max(date), value, as.numeric(NA))) %>%
     ungroup() %>%
-    mutate(pre_value = if_else(year(date) >= 2019, pre_value, as.numeric(NA))) %>%
+    mutate(
+      pre_value = if_else(year(date) >= 2019, pre_value, as.numeric(NA))
+    ) %>%
     filter(date >= "2017-01-01") %>%
     mutate(series_title = str_remove(series_title, "\\(Seas\\)")) %>%
     ggplot(aes(date, value, color = series_title, label = last_value)) +
@@ -306,27 +473,37 @@ draw_u_duration <- function(cps_jobs_data, graphic_title = "Default graphic.") {
     geom_text(show.legend = FALSE, nudge_x = 60, size = 5.5)
 }
 
-three_six_wages <- function(ces_data, graphic_title = "Wages trend default title.", series_analysis = "CES0500000003") {
-  
+three_six_wages <- function(
+  ces_data,
+  graphic_title = "Wages trend default title.",
+  series_analysis = "CES0500000003"
+) {
   ces_data <- ces_data %>% filter(series_id == series_analysis)
-  
+
   AHE <- ces_data %>%
     select(date, value) %>%
     mutate(ThreeMonth = (value / lag(value, 3))^4 - 1) %>%
     mutate(SixMonth = (value / lag(value, 6))^2 - 1) %>%
     mutate(YoY = (value / lag(value, 12)) - 1) %>%
     select(-value, YoY) %>%
-    pivot_longer(ThreeMonth:SixMonth, names_to = "time_length", values_to = "change") %>%
-    mutate(time_length = str_replace_all(time_length, "SixMonth", "6-Month Change")) %>%
-    mutate(time_length = str_replace_all(time_length, "ThreeMonth", "3-Month Change")) %>%
+    pivot_longer(
+      ThreeMonth:SixMonth,
+      names_to = "time_length",
+      values_to = "change"
+    ) %>%
+    mutate(
+      time_length = str_replace_all(time_length, "SixMonth", "6-Month Change")
+    ) %>%
+    mutate(
+      time_length = str_replace_all(time_length, "ThreeMonth", "3-Month Change")
+    ) %>%
     mutate(last_value = ifelse(date == max(date), change, NA))
 
   one_month_change <- ces_data %>%
     select(date, value) %>%
-    mutate(one_month = value/lag(value,1)) %>%
-    mutate(one_month = one_month^12-1) %>%
+    mutate(one_month = value / lag(value, 1)) %>%
+    mutate(one_month = one_month^12 - 1) %>%
     select(date, one_month)
-
 
   MI_dates <- sort(unique(ces_data$date), decreasing = TRUE)
   MI_dates <- MI_dates[seq(1, length(MI_dates), 12)]
@@ -347,15 +524,37 @@ three_six_wages <- function(ces_data, graphic_title = "Wages trend default title
   AHE %>%
     filter(date > "2020-12-01") %>%
     left_join(one_month_change, by = "date") %>%
-    mutate(one_month = if_else(one_month == lag(one_month, 1), as.double(NA), one_month)) %>%
-    ggplot(aes(date, change, color = time_length, label = label_percent()(round(last_value, 3)))) +
+    mutate(
+      one_month = if_else(
+        one_month == lag(one_month, 1),
+        as.double(NA),
+        one_month
+      )
+    ) %>%
+    ggplot(aes(
+      date,
+      change,
+      color = time_length,
+      label = label_percent()(round(last_value, 3))
+    )) +
     geom_line(size = 3) +
-    geom_col(aes(date, one_month), alpha = 0.25, size = 0, show.legend = FALSE) +
+    geom_col(
+      aes(date, one_month),
+      alpha = 0.25,
+      size = 0,
+      show.legend = FALSE
+    ) +
     labs(
-      x = "", y = "",
+      x = "",
+      y = "",
       title = graphic_title,
-      subtitle = paste("Annualized, monthly average hourly earnings of all employees, total private.\nBars are 1-month annualized. Dotted line represents 2018-2019 value of ", round(100 * pre_AHE, 1), "%.", sep = ""), # , round(pre_core,3)*100, "%.", sep=""),
-      caption = "Dotted line is annualized, BLS, Author's calculations. Mike Konczal, Roosevelt Institute."
+      subtitle = paste(
+        "Annualized, monthly average hourly earnings of all employees, total private.\nBars are 1-month annualized. Dotted line represents 2018-2019 value of ",
+        round(100 * pre_AHE, 1),
+        "%.",
+        sep = ""
+      ), # , round(pre_core,3)*100, "%.", sep=""),
+      caption = "Dotted line is annualized, BLS, Author's calculations. Mike Konczal, Economic Security Project."
     ) +
     theme_esp() +
     geom_hline(yintercept = pre_AHE, linetype = "dashed", color = "#A4CCCC") +
@@ -364,62 +563,113 @@ three_six_wages <- function(ces_data, graphic_title = "Wages trend default title
     theme(plot.title.position = "plot") +
     scale_y_continuous(labels = percent) +
     scale_x_date(date_labels = "%b\n%Y", breaks = MI_dates) +
-    theme(legend.position = c(0.85, 0.80), legend.text = element_text(size = 15)) +
+    theme(
+      legend.position = c(0.85, 0.80),
+      legend.text = element_text(size = 15)
+    ) +
     scale_color_manual(values = c("#2D779C", "#A4CCCC")) +
     geom_text(show.legend = FALSE, nudge_x = 44, size = 5.5)
 }
 
 make_jobs_chart <- function(ces_data) {
-  
-  ces_data <- ces_data %>% filter(year(date)>2010) %>% mutate(data_type_code = as.numeric(data_type_code))
-  
-  ces_last <- ces_data %>% filter(series_id == "CES0000000001") %>% filter(date == max(date)) %>% pull(value)
-  
+  ces_data <- ces_data %>%
+    filter(year(date) > 2010) %>%
+    mutate(data_type_code = as.numeric(data_type_code))
+
+  # ---- dates based on latest month in the data ----
+  last_month <- max(ces_data$date, na.rm = TRUE)
+  mid_month <- last_month %m-% months(1) # month used for "previous 3" endpoint
+  start_month <- last_month %m-% months(4) # 3 months prior to mid_month
+
+  # label like "May to July, 2025" but dynamic
+  prev3_label <- paste0(
+    format(start_month, "%B"),
+    " to ",
+    format(mid_month, "%B"),
+    ", ",
+    format(mid_month, "%Y")
+  )
+
+  ces_last <- ces_data %>%
+    filter(series_id == "CES0000000001") %>%
+    filter(date == max(date)) %>%
+    pull(value)
+
   jobs_chart <- ces_data %>%
     filter(seasonal == "S") %>%
     filter(data_type_code == 1) %>%
-    filter(display_level <= 2 | display_level == 3 & industry_name %in% c("Federal", "State government", "Local government")) %>%
+    filter(
+      display_level <= 2 |
+        display_level == 3 &
+          industry_name %in%
+            c("Federal", "State government", "Local government")
+    ) %>%
     group_by(industry_name) %>%
     reframe(
-      change = value[date == max(date)] - value[date == max(date) %m-% months(1)],
-      change_previous_3 = value[date == max(date) %m-% months(1)] - value[date == max(date) %m-% months(4)],
+      change = value[date == last_month] -
+        value[date == last_month %m-% months(1)],
+      change_previous_3 = value[date == mid_month] -
+        value[date == start_month],
       change2024 = value[date == "2024-12-01"] - value[date == "2023-12-01"],
-      series_id = series_id[date == max(date)]
+      series_id = series_id[date == last_month]
     ) %>%
-    mutate(change_previous_3 = round(change_previous_3/3),
-           change2024 = round(change2024/12))
-  
+    mutate(
+      change_previous_3 = round(change_previous_3 / 3),
+      change2024 = round(change2024 / 12)
+    )
+
   jobs_chart <- jobs_chart %>%
     filter(industry_name != "Government") %>%
-    mutate(chart_type = case_when(
-      industry_name %in% c("Total nonfarm", "Goods-producing", "Private service-providing", "Total private") ~ "Total",
-      industry_name %in% c("Mining and logging", "Construction", "Manufacturing") ~ "Goods",
-      industry_name %in% c("Federal", "State government", "Local government") ~ "Government",
-      TRUE ~ "Services"
-    )) %>%
-    mutate(chart_type = factor(chart_type, levels = c("Total", "Goods", "Services", "Government"))) %>%
-    filter(industry_name != "Service-providing") 
-  
-  chart_date <- format(max(ces_data$date, na.rm = TRUE), "%B %Y")
+    mutate(
+      chart_type = case_when(
+        industry_name %in%
+          c(
+            "Total nonfarm",
+            "Goods-producing",
+            "Private service-providing",
+            "Total private"
+          ) ~ "Total",
+        industry_name %in%
+          c("Mining and logging", "Construction", "Manufacturing") ~ "Goods",
+        industry_name %in%
+          c("Federal", "State government", "Local government") ~ "Government",
+        TRUE ~ "Services"
+      )
+    ) %>%
+    mutate(
+      chart_type = factor(
+        chart_type,
+        levels = c("Total", "Goods", "Services", "Government")
+      )
+    ) %>%
+    filter(industry_name != "Service-providing")
+
+  chart_date <- format(last_month, "%B %Y")
 
   jobs_chart %>%
-    mutate(industry_name = if_else(industry_name == "Total nonfarm", "All jobs", industry_name)) %>%
+    mutate(
+      industry_name = if_else(
+        industry_name == "Total nonfarm",
+        "All jobs",
+        industry_name
+      )
+    ) %>%
     arrange(industry_name) %>%
     select(-series_id) %>%
-#    mutate(last = format(last, big.mark=","),
-#           change2019 = format(change2019, big.mark=",")) %>%
     gt(groupname_col = "chart_type") %>%
     row_group_order(groups = c("Total", "Goods", "Services")) %>%
-    tab_header(title = md(paste0("**Summary of the ", chart_date, " Jobs Number**")),
-               subtitle = "All numbers in thousands, averaged for time period") %>%
+    tab_header(
+      title = md(paste0("**Summary of the ", chart_date, " Jobs Number**")),
+      subtitle = "All numbers in thousands, averaged for time period"
+    ) %>%
     cols_label(
       change = "Last-Month",
-      change_previous_3 = "May to July, 2025",
+      change_previous_3 = prev3_label,
       change2024 = "2024 Annual",
       industry_name = ""
     ) %>%
     tab_source_note(
-      source_note = "BLS data, author's calculations. All averaged. Mike Konczal."
+      source_note = "BLS data, author's calculations. All averaged. Mike Konczal, Economic Security Project."
     ) %>%
     opt_stylize(style = 6, color = "cyan") %>%
     tab_spanner(
@@ -427,25 +677,20 @@ make_jobs_chart <- function(ces_data) {
       columns = c(change, change_previous_3, change2024)
     ) %>%
     sub_missing(missing_text = "") %>%
-    gtsave(., filename="graphics/jobs_chart.png")
-  
+    gtsave(., filename = "graphics/jobs_chart.png")
 }
 
 
-
-make_date <- function(x){
-  x$date <- as.Date(paste(x$month, "01", x$year, sep="/"), "%m/%d/%Y")
+make_date <- function(x) {
+  x$date <- as.Date(paste(x$month, "01", x$year, sep = "/"), "%m/%d/%Y")
   return(x)
 }
-
-
-
 
 
 make_Sahm <- function(df) {
   # Make sure your data are sorted by date
   df <- df[order(df$date), ]
-  
+
   # 1. Compute the 3-month moving average of the unemployment rate.
   #    This moving average is aligned to the right (i.e. the average of the current and previous two months).
   df$unemp_ma3 <- rollapply(
@@ -455,7 +700,7 @@ make_Sahm <- function(df) {
     align = "right",
     fill = NA
   )
-  
+
   # 2. For each month, compute the minimum 3-month moving average over the past 12 months.
   #    Again, aligned to the right (so it considers the current month and the previous 11 months).
   df <- df %>%
@@ -469,16 +714,16 @@ make_Sahm <- function(df) {
         fill = NA
       )
     )
-  
+
   # 3. Calculate the difference between the current 3-month moving average and the minimum of the last 12 months.
   df$diff <- df$unemp_ma3 - df$min_ma12
-  
+
   # 4. Check whether the Sahm Rule is triggered: diff >= 0.5
   df$sahm_trigger <- df$diff >= 0.5
-  
+
   # 5. Optionally, calculate how many percentage points are still needed to trigger the rule.
   #    (If the value is negative, the threshold hasn't been reached yet.)
   df$gap_to_trigger <- 0.5 - df$diff
-  
+
   return(df)
 }
