@@ -36,6 +36,7 @@ MONTH_MAP = {
     "Jan.": 1, "Feb.": 2, "Mar.": 3, "Apr.": 4, "May": 5, "Jun.": 6,
     "Jul.": 7, "Aug.": 8, "Sep.": 9, "Oct.": 10, "Nov": 11, "Dec.": 12,
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "Jun": 6, "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
+    "Nov.": 11, "May.": 5,
 }
 
 def _normalize_col(col):
@@ -44,7 +45,11 @@ def _normalize_col(col):
     return re.sub(r"\s+", " ", str(col)).strip()
 
 def _to_num(s):
-    return pd.to_numeric(str(s).strip().replace("\u2014", "").replace("—", ""), errors="coerce")
+    cleaned = str(s).strip()
+    cleaned = cleaned.replace("\u2014", "").replace("—", "")
+    cleaned = re.sub(r"\s*\([A-Z]\)\s*$", "", cleaned)
+    cleaned = cleaned.replace(",", "")
+    return pd.to_numeric(cleaned, errors="coerce")
 
 def _looks_like_year_table(df):
     cols = [_normalize_col(c) for c in df.columns]
@@ -53,6 +58,10 @@ def _looks_like_year_table(df):
     has_sa = any("Seasonally adjusted" in c for c in cols)
     has_nsa = any("Not seasonally adjusted" in c for c in cols)
     return has_month and has_year and has_sa and has_nsa
+
+def _parse_year(val):
+    m = re.search(r"\b(\d{4})\b", str(val))
+    return int(m.group(1)) if m else pd.NA
 
 def _extract_year_table(df):
     df = df.copy()
@@ -66,11 +75,14 @@ def _extract_year_table(df):
         for c in df.columns:
             if c == "Month":
                 continue
-            if df[c].astype(str).str.fullmatch(r"\s*\d{4}\s*").sum() >= 6:
+            if df[c].astype(str).str.fullmatch(r"\s*\d{4}\s*(?:\([A-Z]\))?\s*").sum() >= 6:
                 df = df.rename(columns={c: "Year"})
                 break
 
-    df = df[df["Month"].astype(str).str.strip().isin(MONTH_MAP.keys())].copy()
+    month_raw = df["Month"].astype(str).str.strip()
+    month_clean = month_raw.str.replace(r"\s*\([A-Z]\)\s*$", "", regex=True)
+    df = df[month_clean.isin(MONTH_MAP.keys())].copy()
+    df["Month"] = month_clean
     if df.empty:
         return pd.DataFrame()
 
@@ -112,7 +124,7 @@ def _extract_year_table(df):
 
     out["month"] = out["Month"].astype(str).str.strip()
     out["month_num"] = out["month"].map(MONTH_MAP).astype("Int64")
-    out["year"] = pd.to_numeric(out["Year"], errors="coerce").astype("Int64")
+    out["year"] = out["Year"].apply(_parse_year).astype("Int64")
 
     core_cols = [
         "year", "month", "month_num",
@@ -189,7 +201,14 @@ def scrape_bls_revisions(source_url: str = SOURCE_URL) -> pd.DataFrame:
     numeric_cols = [c for c in df.columns if re.search(r"(^sa_|^nsa_)", c)]
     df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce")
 
-    df = df.drop_duplicates(subset=["year", "month_num"]).sort_values(["year", "month_num"]).reset_index(drop=True)
+    df["row_order"] = range(len(df))
+    df["non_na_count"] = df[numeric_cols].notna().sum(axis=1)
+    df = (
+        df.sort_values(["year", "month_num", "non_na_count", "row_order"])
+        .groupby(["year", "month_num"], as_index=False)
+        .tail(1)
+    )
+    df = df.drop(columns=["row_order", "non_na_count"]).sort_values(["year", "month_num"]).reset_index(drop=True)
 
     # Add a proper date column (YYYY-MM-01)
     df["date"] = pd.to_datetime(

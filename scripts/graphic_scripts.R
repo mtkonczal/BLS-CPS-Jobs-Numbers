@@ -513,16 +513,8 @@ three_six_wages <- function(
   date_period <- interval(date_start, date_end)
   date_period <- date_period %/% months(1)
 
-  pre_AHE <- ces_data %>%
-    filter((date == date_start | date == date_end)) %>%
-    mutate(change = value / lag(value, 1)) %>%
-    filter(!is.na(change)) %>%
-    mutate(change = change^(12 / date_period) - 1) %>%
-    select(change)
-  pre_AHE <- as.numeric(pre_AHE)
-
   AHE %>%
-    filter(date > "2020-12-01") %>%
+    filter(date >= "2024-01-01") %>%
     left_join(one_month_change, by = "date") %>%
     mutate(
       one_month = if_else(
@@ -549,15 +541,13 @@ three_six_wages <- function(
       y = "",
       title = graphic_title,
       subtitle = paste(
-        "Annualized, monthly average hourly earnings of all employees, total private.\nBars are 1-month annualized. Dotted line represents 2018-2019 value of ",
-        round(100 * pre_AHE, 1),
+        "Annualized, monthly average hourly earnings of all employees, total private.\nBars are 1-month annualized.",
         "%.",
         sep = ""
       ), # , round(pre_core,3)*100, "%.", sep=""),
       caption = "Dotted line is annualized, BLS, Author's calculations. Mike Konczal, Economic Security Project."
     ) +
     theme_esp() +
-    geom_hline(yintercept = pre_AHE, linetype = "dashed", color = "#A4CCCC") +
     scale_fill_brewer(palette = "Paired") +
     theme(panel.grid.major.y = element_line(size = 0.5)) +
     theme(plot.title.position = "plot") +

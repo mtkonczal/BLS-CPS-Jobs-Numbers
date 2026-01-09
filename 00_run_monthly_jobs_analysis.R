@@ -16,18 +16,20 @@ format(
 )
 
 
-source("01_api_calls_1st_unrate_jobs.R")
-source("01_api_health_care.R")
-source("01_api_goods_loglines.R")
-source("02_revisions_estimate.R")
+source("01_revisions_estimate.R")
+source("02_unrate_jobs.R")
+source("03_initial_tweet.R")
 
-source("03_api_calls_1st_young_unrate.R")
-source("04_a_immigration_unrate_api.R")
-source("04_api_calls_unrate_by_type_AHE.R")
-source("05_api_calls_flows_4_types.R")
+cat(paragraph, "\n")
 
-source("06_unemployment_durations.R")
-source("05_where_unrate_increased.R")
+source("04_health_care.R")
+source("05_goods_loglines.R")
+source("07_young_unrate.R")
+source("08_immigration_unrate.R")
+source("09_unrate_by_type_ahe.R")
+source("10_flows_4_types.R")
+source("11_unemployment_durations.R")
+source("12_where_unrate_increased.R")
 
 # Remote work API call still.
 # source("08_remote_work.R")
@@ -37,6 +39,5 @@ ces_data$data_type_code_org <- ces_data$data_type_code
 ces_data$data_type_code <- as.numeric(ces_data$data_type_code)
 
 # Two calls that use ces.
-source("06_cyclical_industries.R")
+source("13_cyclical_industries.R")
 make_jobs_chart(ces_data)
-source("08_job_slowdown_by_industry.R")
