@@ -4,6 +4,7 @@ library(scales)
 library(blsR)
 library(ggplot2)
 library(tidyr)
+library(gt)
 
 if (!exists("unrate")) {
   stop("Expected `unrate` from 02_unrate_jobs.R. Source that script first.")
@@ -108,8 +109,8 @@ paragraph <- paste0(
 positive_color <- "#2c3254" # Bright blue
 negative_color <- "#ff8361" # Pale violet
 
-race_start <- as.Date("2024-12-01")
-race_end <- as.Date("2025-12-01")
+race_start <- as.Date("2025-01-01")
+race_end <- as.Date("2026-01-01")
 
 race_jobs <- get_n_series_table(
   c(
@@ -120,7 +121,7 @@ race_jobs <- get_n_series_table(
   ),
   api_key = bls_get_key(),
   start_year = 2024,
-  end_year = 2025,
+  end_year = 2026,
   tidy = TRUE
 ) %>%
   mutate(
@@ -231,4 +232,58 @@ ggsave(
   width = 12,
   height = 6.75,
   units = "in"
+)
+
+# Private payroll levels: yesterday vs today with revisions (gt table) ----
+private_revision_wide <- tibble::tribble(
+  ~series, ~yesterday, ~today,
+  "Total Private December 2025", NA_real_, 136115,
+  "Total Private November 2025", 136148, 136078,
+  "Total Private January 2025", 135461, 135461,
+  "Difference, Latest to Jan", 687, 654
+) %>%
+  mutate(series = factor(series, levels = rev(unique(series))))
+
+private_revision_gt <- private_revision_wide %>%
+  mutate(
+    yesterday = if_else(is.na(yesterday), "", comma(yesterday)),
+    today = if_else(is.na(today), "", comma(today))
+  ) %>%
+  gt(rowname_col = "series") %>%
+  cols_label(
+    yesterday = "As of Yesterday (1/8)",
+    today = "As of Today With Revisions (1/9)"
+  ) %>%
+  tab_header(
+    title = "Private Payroll Levels Were Revised Slightly Lower",
+    subtitle = "Yesterday (1/8) vs today with revisions (1/9), thousands of jobs"
+  ) %>%
+  tab_source_note(
+    source_note = "Source: ALFRED (FRED), CES, seasonally adjusted. Mike Konczal, Economic Security Project."
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_row_groups()
+  ) %>%
+  tab_style(
+    style = cell_borders(
+      sides = "top",
+      color = "black",
+      weight = px(2)
+    ),
+    locations = cells_body(
+      rows = series == "Difference, Latest to Jan"
+    )
+  ) %>%
+  tab_options(
+    table.font.size = 16,
+    data_row.padding = px(8),
+    heading.title.font.size = 20,
+    heading.subtitle.font.size = 14
+  )
+
+gtsave(
+  private_revision_gt,
+  "graphics/03_private_revisions_comparison_table.png",
+  zoom = 2
 )

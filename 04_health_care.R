@@ -14,7 +14,7 @@ health_jobs <- get_n_series_table(
   ),
   api_key = bls_get_key(),
   start_year = 2020,
-  end_year = 2025,
+  end_year = year(Sys.Date()),
   tidy = TRUE
 )
 
@@ -95,7 +95,7 @@ plot_df %>%
   ggplot(aes(x = date, y = value, fill = type)) +
   geom_col(position = "stack") +
   geom_text(
-    data = plot_df %>% filter(year(date) == 2025),
+    data = plot_df %>% filter(year(date) >= 2025),
     aes(label = comma(round(value))),
     position = position_stack(vjust = 0.5),
     color = "white",

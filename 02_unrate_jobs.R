@@ -14,7 +14,7 @@ source("scripts/graphic_scripts.R")
 title1 <- "Unemployment Is Increasing"
 title2 <- "Weak Initial Number, and Now First Month of Negative Job Growth"
 title2_private <- "Federal Buyouts Show Up in Data"
-title3 <- "More Industries Are Losing Jobs"
+title3 <- "More Than Half of Industries Are Gaining Jobs"
 title_gender <- "Men have gained -56 out of a total of 107 jobs since May"
 
 # Set up your bls KEY and put it in your .Renviron using usethis::edit_r_environ()
@@ -35,7 +35,7 @@ unrate <- get_n_series_table(
   ),
   api_key = bls_get_key(),
   start_year = 2011,
-  end_year = 2025,
+  end_year = 2026,
   tidy = TRUE
 )
 
@@ -299,7 +299,7 @@ plot_df %>%
   ggplot(aes(x = date, y = jobs, fill = gender)) +
   geom_col(position = "stack") +
   geom_text(
-    data = plot_df %>% filter(year(date) == 2025),
+    data = plot_df %>% filter(year(date) >= 2025),
     aes(label = comma(round(jobs))),
     position = position_stack(vjust = 0.5),
     color = "white",
