@@ -66,10 +66,15 @@ industry_coefs <- industry_coefs %>%
     )
   )
 
+latest_cyc_month <- ces_data %>%
+  filter(seasonal == "S", data_type_code == 1) %>%
+  summarize(latest_date = max(date, na.rm = TRUE) %m-% months(1)) %>%
+  pull(latest_date)
+
 MI_datesCYC <- sort(
   ces_data %>%
     filter(seasonal == "S") %>%
-    filter(date <= max(date) %m-% months(1)) %>%
+    filter(date <= latest_cyc_month) %>%
     distinct(date) %>%
     pull(),
   decreasing = TRUE
@@ -79,7 +84,7 @@ MI_datesCYC <- MI_datesCYC[seq(1, length(MI_datesCYC), 48)]
 # Job growth by sensititvity: 1 month ----
 ces_data %>%
   filter(seasonal == "S", data_type_code == 1, year >= graph_start_year) %>%
-  filter(date <= max(date) %m-% months(1)) %>%
+  filter(date <= latest_cyc_month) %>%
   inner_join(industry_coefs, by = "industry_name") %>%
   group_by(series_title) %>%
   mutate(job_growth = (value - lag(value, 3)) / 3) %>%
@@ -116,11 +121,32 @@ ggsave(
   units = "in"
 )
 
+industry_jobs_latest <- ces_data %>%
+  filter(seasonal == "S", data_type_code == 1, date <= latest_cyc_month) %>%
+  inner_join(industry_coefs, by = "industry_name") %>%
+  arrange(industry_name, date) %>%
+  group_by(industry_name) %>%
+  mutate(three_month_avg_job_gain = (value - lag(value, 3)) / 3) %>%
+  ungroup() %>%
+  filter(date == latest_cyc_month) %>%
+  select(
+    industry_name,
+    date,
+    estimate,
+    sensitivity_group,
+    three_month_avg_job_gain
+  ) %>%
+  arrange(sensitivity_group, desc(three_month_avg_job_gain))
+
+write_csv(
+  industry_jobs_latest,
+  "data/13_cyclical_industry_coefs_latest_jobs.csv"
+)
 
 # Find current monthly cyclicality ----
 
 ces_data %>%
   filter(seasonal == "S", data_type_code == 1) %>%
   filter(date == max(date)) %>%
-  group_by(display_level) %>%
+  group_by(industry_display_level) %>%
   reframe(sum = sum(value), n = n())

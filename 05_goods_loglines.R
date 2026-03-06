@@ -1,66 +1,150 @@
-# ---- Goods employment vs log-linear projection (BLS CES) ----
+library(tidyverse)
+library(blsR)
+library(scales)
+library(tidyusmacro)
+source("scripts/graphic_scripts.R")
 
-actual_color <- "#0B4F6C" # deep teal
-trend_color <- "#B23A48" # dark brick red
-
-title_goods <- "Employment in Goods-Producing Jobs Has Fallen Under Trump"
+actual_color <- "#2c3254"
+trend_color <- "#B23A48"
 
 proj_start <- as.Date("2022-12-01")
 proj_end <- as.Date("2024-12-01")
 
-goods <- get_n_series_table(
+blue_collar_components <- get_n_series_table(
   c(
-    "CES0600000001", # Goods-producing employment
-    "CES0000000001" # Total nonfarm (optional; not used below)
+    "CES1000000001",
+    "CES2000000001",
+    "CES3000000001",
+    "CES4300000001",
+    "CES4422000001"
   ),
   api_key = bls_get_key(),
   start_year = 2020,
-  end_year = 2025,
+  end_year = as.integer(format(Sys.Date(), "%Y")),
   tidy = TRUE
 ) %>%
+  mutate(date = as.Date(paste0(year, "/", month, "/", 1))) %>%
+  transmute(
+    date,
+    mining_logging = CES1000000001,
+    construction = CES2000000001,
+    manufacturing = CES3000000001,
+    transportation_warehousing = CES4300000001,
+    utilities = CES4422000001
+  ) %>%
+  pivot_longer(
+    -date,
+    names_to = "series",
+    values_to = "value"
+  ) %>%
   mutate(
-    date = as.Date(paste0(year, "/", month, "/", 1)),
-    goods = CES0600000001,
-    goods_proj = logLinearProjection(date, goods, proj_start, proj_end)
+    series = recode(
+      series,
+      mining_logging = "Mining and Logging",
+      construction = "Construction",
+      manufacturing = "Manufacturing",
+      transportation_warehousing = "Transportation and Warehousing",
+      utilities = "Utilities"
+    )
+  ) %>%
+  group_by(series) %>%
+  mutate(project = logLinearProjection(date, value, proj_start, proj_end)) %>%
+  ungroup()
+
+MI_dates_components <- date_breaks_n(blue_collar_components$date, 6)
+
+latest_component_gap <- blue_collar_components %>%
+  group_by(series) %>%
+  slice_max(date, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  summarize(total_gap = sum(project - value, na.rm = TRUE)) %>%
+  pull(total_gap)
+
+component_actual_labels <- blue_collar_components %>%
+  group_by(series) %>%
+  slice_max(date, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(
+    label = comma(round(value)),
+    label_date = date + days(5)
   )
 
-# Date breaks like your bottom chart
-MI_dates_goods <- date_breaks_n(goods$date, 6)
+component_project_labels <- blue_collar_components %>%
+  group_by(series) %>%
+  slice_max(date, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(
+    label = comma(round(project)),
+    label_date = date + days(5)
+  )
 
-plot_goods <- goods %>%
+plot_blue_collar_components <- blue_collar_components %>%
   filter(date >= proj_start) %>%
   ggplot(aes(x = date)) +
-  geom_line(aes(y = goods, color = "Goods employment"), linewidth = 1.2) +
+  geom_line(aes(y = value, color = "Employment"), linewidth = 1.1) +
   geom_line(
-    aes(y = goods_proj, color = "Log-linear trend"),
-    linewidth = 1.2,
+    aes(y = project, color = "Log-linear trend (Dec 2022-Dec 2024)"),
+    linewidth = 1,
     linetype = "22"
   ) +
+  geom_text(
+    data = component_actual_labels,
+    aes(x = label_date, y = value, label = label),
+    inherit.aes = FALSE,
+    hjust = 0,
+    size = 3.8,
+    color = actual_color
+  ) +
+  geom_text(
+    data = component_project_labels,
+    aes(x = label_date, y = project, label = label),
+    inherit.aes = FALSE,
+    hjust = 0,
+    size = 3.8,
+    color = trend_color
+  ) +
+  facet_wrap(~series, scales = "free_y") +
   scale_color_manual(
     values = c(
-      "Goods employment" = actual_color,
-      "Log-linear trend" = trend_color
+      "Employment" = actual_color,
+      "Log-linear trend (Dec 2022-Dec 2024)" = trend_color
     )
   ) +
-  scale_x_date(date_labels = "%b\n%Y", breaks = MI_dates_goods) +
+  scale_x_date(
+    date_labels = "%b\n%Y",
+    breaks = MI_dates_components,
+    expand = expansion(mult = c(0.02, 0.12))
+  ) +
+  scale_y_continuous(labels = comma) +
   labs(
-    title = title_goods,
-    subtitle = "BLS CES Goods-producing employment (thousands). Dashed line is a log-linear regression from Dec 2022 to Dec 2024.",
+    title = paste0(
+      "Blue-Collar Industries Are ",
+      comma(round(latest_component_gap * 1000, -3)),
+      " Jobs Below Trend"
+    ),
+    subtitle = "Current Employment Statistics employment levels, in thousands.",
     x = NULL,
     y = NULL,
     color = NULL,
-    caption = "Source: BLS, CES. Seasonally adjusted. Mike Konczal, Economic Security Project."
+    caption = "BLS, Current Employment Statistics, seasonally adjusted. Mike Konczal, Economic Security Project."
   ) +
   theme_esp() +
-  theme(legend.position = "right")
+  theme(
+    legend.position = "top",
+    legend.text = element_text(size = 13),
+    plot.title = element_text(size = 26),
+    plot.subtitle = element_text(size = 14),
+    plot.caption = element_text(size = 11),
+    strip.text = element_text(size = 15)
+  )
 
-plot_goods
+plot_blue_collar_components
 
 ggsave(
-  "graphics/05_goods_loglinear_projection.png",
-  plot = plot_goods,
+  "graphics/05_blue_collar_components_loglinear.png",
+  plot = plot_blue_collar_components,
   dpi = "retina",
-  width = 12,
-  height = 6.75,
+  width = 14,
+  height = 8.4,
   units = "in"
 )

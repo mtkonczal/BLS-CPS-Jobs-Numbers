@@ -33,7 +33,7 @@ flows_raw <- get_n_series_table(
   in_out_unrate,
   api_key = bls_get_key(),
   start_year = 2022,
-  end_year = 2025,
+  end_year = as.integer(format(Sys.Date(), "%Y")),
   tidy = TRUE
 ) %>%
   mutate(date = as.Date(paste0(year, "/", month, "/", 1))) %>%
@@ -215,5 +215,89 @@ ggsave(
   dpi = "retina",
   width = 12,
   height = 8,
+  units = "in"
+)
+
+
+flows_clean <- flows %>%
+  mutate(
+    series_label = case_when(
+      series_id == "LNS17600000" ~ "Not in LF -> Unemployed",
+      series_id == "LNS17400000" ~ "Employed -> Unemployed",
+      series_id == "LNS17900000" ~ "Unemployed -> Not in LF",
+      series_id == "LNS17100000" ~ "Unemployed -> Employed"
+    ),
+    series_label = factor(
+      series_label,
+      levels = c(
+        "Not in LF -> Unemployed",
+        "Employed -> Unemployed",
+        "Unemployed -> Not in LF",
+        "Unemployed -> Employed"
+      )
+    )
+  )
+
+flows_clean_labels <- flows_clean %>%
+  group_by(series_label) %>%
+  filter(date == max(date)) %>%
+  ungroup() %>%
+  mutate(
+    label_date = date + days(24),
+    label = percent(value, accuracy = 0.01)
+  )
+
+flows_clean_colors <- c(
+  "Not in LF -> Unemployed" = "#c65d08",
+  "Employed -> Unemployed" = "#2a9d6f",
+  "Unemployed -> Not in LF" = "#d93b8e",
+  "Unemployed -> Employed" = "#6c6bb0"
+)
+
+flows_clean %>%
+  ggplot(aes(date, value, color = series_label)) +
+  geom_hline(yintercept = 0, color = "grey55", linewidth = 0.5) +
+  geom_line(linewidth = 1.8, show.legend = FALSE) +
+  geom_point(size = 2.6, show.legend = FALSE) +
+  geom_text(
+    data = flows_clean_labels,
+    aes(label_date, value, label = label),
+    hjust = 0,
+    size = 5.1,
+    fontface = "bold",
+    show.legend = FALSE
+  ) +
+  facet_wrap(~series_label, ncol = 2, scales = "free_y") +
+  scale_color_manual(values = flows_clean_colors) +
+  scale_y_continuous(labels = percent_format(accuracy = 0.1)) +
+  scale_x_date(
+    breaks = MI_dates,
+    date_labels = "%b\n%Y",
+    expand = expansion(mult = c(0.01, 0.14))
+  ) +
+  labs(
+    title = "Labor-Force Flows Behind the 2025 Unemployment Increase",
+    subtitle = "Monthly flows as a share of the labor force. Top row adds to unemployment; bottom row subtracts from unemployment.",
+    x = "",
+    y = "",
+    caption = "BLS CPS. 'Marginal inflows to unemployment' ignored for now but drive small discrepancies. Mike Konczal"
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_esp(base_size = 16) +
+  theme(
+    strip.text = element_text(size = 17, face = "bold"),
+    plot.title = element_text(size = 24, face = "bold"),
+    plot.subtitle = element_text(size = 15),
+    plot.caption.position = "plot",
+    axis.text.x = element_text(size = 12),
+    panel.grid.major.x = element_line(color = "grey82"),
+    panel.grid.major.y = element_line(color = "grey88")
+  )
+
+ggsave(
+  "graphics/10_flows_unrate_clean.png",
+  dpi = "retina",
+  width = 13,
+  height = 9,
   units = "in"
 )

@@ -14,8 +14,7 @@ title4_unrate_by_type <- "Job Losers and New Entrants Drive Unemployment Increas
 title5_ahe <- "Average Hourly Earnings Remain Volatile"
 
 
-bls_api <- "996d4e4af85f43f3ac301805891cbf6e"
-bls_set_key(bls_api)
+bls_set_key(Sys.getenv("BLS_KEY"))
 
 
 unrate_types_raw <- get_n_series_table(
@@ -30,7 +29,7 @@ unrate_types_raw <- get_n_series_table(
   ),
   api_key = bls_get_key(),
   start_year = 2019,
-  end_year = 2025,
+  end_year = year(Sys.Date()),
   tidy = TRUE
 )
 

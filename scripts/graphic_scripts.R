@@ -27,6 +27,27 @@ scale_fill_esp <- function(...) {
   scale_fill_manual(values = esp_colors, ...)
 }
 
+theme_esp <- function(base_size = 12) {
+  theme_minimal(base_size = base_size, base_family = "sans") +
+    theme(
+      plot.background = element_rect(fill = "#f4f2e4", color = NA),
+      panel.background = element_rect(fill = "#f4f2e4", color = NA),
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(color = "grey85", linewidth = 0.4),
+      plot.title.position = "plot",
+      plot.title = element_text(face = "bold", color = "#2c3254"),
+      plot.subtitle = element_text(color = "#2c3254"),
+      plot.caption = element_text(color = "grey35"),
+      axis.title = element_blank(),
+      axis.text = element_text(color = "#2c3254"),
+      legend.title = element_blank(),
+      legend.background = element_rect(fill = "#f4f2e4", color = NA),
+      legend.key = element_rect(fill = "#f4f2e4", color = NA),
+      strip.background = element_rect(fill = "#e8e4d3", color = NA),
+      strip.text = element_text(face = "bold", color = "#2c3254")
+    )
+}
+
 
 total_jobs_graphic <- function(
   ces_data,
@@ -400,6 +421,15 @@ unemployment_rate_by_type <- function(
       label_date = date + days(5)
     )
 
+  pre_labels <- plot_data %>%
+    group_by(series_title) %>%
+    slice_max(date, n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    mutate(
+      label = percent(pre_value, accuracy = 0.01),
+      label_date = date + days(5)
+    )
+
   ggplot(plot_data, aes(date, value, color = series_title)) +
     geom_line(size = 1.2) +
     geom_line(
@@ -410,6 +440,19 @@ unemployment_rate_by_type <- function(
     geom_text(
       data = last_labels,
       aes(x = label_date, y = value, label = label, color = series_title),
+      inherit.aes = FALSE,
+      hjust = 0,
+      size = 4,
+      show.legend = FALSE
+    ) +
+    geom_text(
+      data = pre_labels,
+      aes(
+        x = label_date,
+        y = pre_value,
+        label = label,
+        color = series_title
+      ),
       inherit.aes = FALSE,
       hjust = 0,
       size = 4,
@@ -433,7 +476,9 @@ unemployment_rate_by_type <- function(
     theme_esp() +
     theme(
       strip.text.x = element_text(size = 15),
-      plot.margin = margin(5.5, 40, 5.5, 5.5)
+      plot.title = element_text(size = 22, face = "bold", color = "#2c3254"),
+      plot.margin = margin(5.5, 40, 5.5, 5.5),
+      legend.position = "none"
     )
 }
 
@@ -566,6 +611,16 @@ make_jobs_chart <- function(ces_data) {
     filter(year(date) > 2010) %>%
     mutate(data_type_code = as.numeric(data_type_code))
 
+  pull_month_value <- function(values, dates, target_date) {
+    matched_value <- values[dates == target_date]
+
+    if (length(matched_value) == 0) {
+      return(NA_real_)
+    }
+
+    matched_value[[1]]
+  }
+
   # ---- dates based on latest month in the data ----
   last_month <- max(ces_data$date, na.rm = TRUE)
   mid_month <- last_month %m-% months(1) # month used for "previous 3" endpoint
@@ -589,8 +644,8 @@ make_jobs_chart <- function(ces_data) {
     filter(seasonal == "S") %>%
     filter(data_type_code == 1) %>%
     filter(
-      display_level <= 2 |
-        display_level == 3 &
+      industry_display_level <= 2 |
+        industry_display_level == 3 &
           industry_name %in%
             c("Federal", "State government", "Local government")
     ) %>%
@@ -608,7 +663,36 @@ make_jobs_chart <- function(ces_data) {
       change2024 = round(change2024 / 12)
     )
 
+  wages_chart <- ces_data %>%
+    filter(seasonal == "S") %>%
+    filter(data_type_code == 3) %>%
+    filter(
+      industry_display_level <= 2 |
+        industry_display_level == 3 &
+          industry_name %in%
+            c("Federal", "State government", "Local government")
+    ) %>%
+    group_by(industry_name) %>%
+    summarize(
+      wage_last = pull_month_value(value, date, last_month),
+      wage_three_months_ago = pull_month_value(
+        value,
+        date,
+        last_month %m-% months(3)
+      ),
+      wage_year_ago = pull_month_value(
+        value,
+        date,
+        last_month %m-% months(12)
+      ),
+      wage_growth_3m = (wage_last / wage_three_months_ago)^4 - 1,
+      wage_growth_yoy = wage_last / wage_year_ago - 1,
+      .groups = "drop"
+    ) %>%
+    select(industry_name, wage_growth_3m, wage_growth_yoy)
+
   jobs_chart <- jobs_chart %>%
+    left_join(wages_chart, by = "industry_name") %>%
     filter(industry_name != "Government") %>%
     mutate(
       chart_type = case_when(
@@ -645,19 +729,30 @@ make_jobs_chart <- function(ces_data) {
       )
     ) %>%
     arrange(industry_name) %>%
-    select(-series_id) %>%
+    select(
+      industry_name,
+      change,
+      change_previous_3,
+      change2024,
+      wage_growth_3m,
+      wage_growth_yoy,
+      chart_type
+    ) %>%
     gt(groupname_col = "chart_type") %>%
     row_group_order(groups = c("Total", "Goods", "Services")) %>%
     tab_header(
       title = md(paste0("**Summary of the ", chart_date, " Jobs Number**")),
-      subtitle = "All numbers in thousands, averaged for time period"
+      subtitle = "Employment columns in thousands, averaged for time period. Wage growth columns show annualized three-month growth and year-over-year growth."
     ) %>%
     cols_label(
       change = "Last-Month",
       change_previous_3 = prev3_label,
       change2024 = "2024 Annual",
+      wage_growth_3m = "3-Month",
+      wage_growth_yoy = "Year-over-Year",
       industry_name = ""
     ) %>%
+    fmt_percent(columns = c(wage_growth_3m, wage_growth_yoy), decimals = 1) %>%
     tab_source_note(
       source_note = "BLS data, author's calculations. All averaged. Mike Konczal, Economic Security Project."
     ) %>%
@@ -665,6 +760,10 @@ make_jobs_chart <- function(ces_data) {
     tab_spanner(
       label = "Employment Change (avg)",
       columns = c(change, change_previous_3, change2024)
+    ) %>%
+    tab_spanner(
+      label = "Wage Growth",
+      columns = c(wage_growth_3m, wage_growth_yoy)
     ) %>%
     sub_missing(missing_text = "") %>%
     gtsave(., filename = "graphics/jobs_chart.png")

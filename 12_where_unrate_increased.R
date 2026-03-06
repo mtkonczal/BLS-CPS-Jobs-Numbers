@@ -12,11 +12,11 @@ unrate_lookup <- tribble(
   "LNS14000006" , "Race/Ethnicity"  , "Black"                   , NA    ,
   "LNS14000009" , "Race/Ethnicity"  , "Hispanic or Latino"      , NA    ,
   "LNS14032183" , "Race/Ethnicity"  , "Asian"                   , NA    ,
-  "LNS14000012" , "Age"             , "16–19"                 ,     1 ,
-  "LNS14000036" , "Age"             , "20–24"                 ,     2 ,
-  "LNS14000089" , "Age"             , "25–34"                 ,     3 ,
-  "LNS14000091" , "Age"             , "35–44"                 ,     4 ,
-  "LNS14000093" , "Age"             , "45–54"                 ,     5 ,
+  "LNS14000012" , "Age"             , "16–19"                   ,     1 ,
+  "LNS14000036" , "Age"             , "20–24"                   ,     2 ,
+  "LNS14000089" , "Age"             , "25–34"                   ,     3 ,
+  "LNS14000091" , "Age"             , "35–44"                   ,     4 ,
+  "LNS14000093" , "Age"             , "45–54"                   ,     5 ,
   "LNS14024230" , "Age"             , "55+"                     ,     6 ,
   "LNS14027659" , "Education (25+)" , "< High school"           ,     1 ,
   "LNS14027660" , "Education (25+)" , "High school, no college" ,     2 ,
@@ -38,7 +38,7 @@ unrate_across <- get_n_series_table(
   unrate_lookup$series_id,
   api_key = bls_get_key(),
   start_year = 2024,
-  end_year = 2025,
+  end_year = year(Sys.Date()),
   tidy = TRUE
 ) %>%
   mutate(date = as.Date(paste0(year, "/", month, "/", 1))) %>%

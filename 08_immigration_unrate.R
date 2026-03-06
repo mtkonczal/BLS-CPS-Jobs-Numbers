@@ -20,7 +20,7 @@ lvl <- get_n_series_table(
   ), # Foreign Unemp
   api_key = bls_get_key(),
   start_year = 2017,
-  end_year = 2025,
+  end_year = year(Sys.Date()),
   tidy = TRUE
 )
 
@@ -57,13 +57,16 @@ manual_colors <- c(
   "Foreign-Born Unemployment Rate" = "#ff8361" # ESP Warm Red
 )
 
-# ── Graphic C (manual): Native-only by month, lines for 2023–2025 + final label for latest year ─
+# ── Graphic C (manual): Native-only by month, include 2023 onward + final label for latest year ─
+latest_year <- max(year(manual_rates$date), na.rm = TRUE)
+display_years <- seq(2023, latest_year)
+
 dfC <- manual_rates %>%
   mutate(
     yr = year(date),
     m_num = month(date) # numeric month to keep ordering stable
   ) %>%
-  filter(yr %in% c(2023, 2024, 2025)) %>%
+  filter(yr %in% display_years) %>%
   group_by(yr, m_num) %>%
   summarise(
     native_unrate_manual = mean(native_unrate_manual, na.rm = TRUE),
@@ -72,12 +75,16 @@ dfC <- manual_rates %>%
   mutate(m_lbl = factor(month.abb[m_num], levels = month.abb))
 
 # Compute label only for the latest year present in dfC
-latest_year <- max(dfC$yr, na.rm = TRUE)
 label_pt <- dfC %>%
   filter(yr == latest_year) %>%
   arrange(m_num) %>%
   slice_tail(n = 1) %>%
   mutate(label_txt = scales::percent(native_unrate_manual, accuracy = 0.01))
+
+year_palette <- colorRampPalette(c("#70ad8f", "#ff8361", "#2c3254"))(
+  length(display_years)
+)
+names(year_palette) <- as.character(display_years)
 
 dfC <- dfC %>% filter(!is.na(native_unrate_manual))
 pC <- ggplot(
@@ -91,9 +98,7 @@ pC <- ggplot(
 ) +
   geom_line(size = 1.2) +
   geom_point(size = 2) +
-  scale_color_manual(
-    values = c("2023" = "#70ad8f", "2024" = "#ff8361", "2025" = "#2c3254")
-  ) +
+  scale_color_manual(values = year_palette) +
   scale_y_continuous(labels = scales::percent) +
   theme_esp() +
   labs(

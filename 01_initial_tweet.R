@@ -7,55 +7,19 @@ library(lubridate)
 library(patchwork)
 source("scripts/graphic_scripts.R")
 
-# ── Consensus expectations (UPDATE EACH MONTH) ──────────────────────────
-consensus_jobs <- 170     # expected NFP gain, thousands
-consensus_unrate <- 0.042 # expected unemployment rate (e.g. 4.2% = 0.042)
-
-# ── Download latest revisions data ───────────────────────────────────────
-cat("Downloading latest revisions data from BLS…\n")
-py_status <- system("python3 00_download_jobs_revisions.py")
-if (py_status != 0) {
-  warning("Python download script failed (exit ", py_status, "). Using cached CSV.")
-}
-
-# BLS API key
-bls_set_key(Sys.getenv("BLS_KEY"))
-
 positive_color <- "#2c3254"
 negative_color <- "#ff8361"
 green_color <- "#70ad8f"
 
 how_many_months <- 6
 
-# ── Data: Unemployment rate from CPS ─────────────────────────────────────
+if (!exists("unrate")) {
+  stop("Expected `unrate` to be loaded before sourcing 01_initial_tweet.R.")
+}
 
-unrate <- get_n_series_table(
-  c("LNS13000000", "LNS11000000"),
-  api_key = bls_get_key(),
-  start_year = 2023,
-  end_year = 2026,
-  tidy = TRUE
-) %>%
-  mutate(
-    LNS11000000 = as.numeric(LNS11000000),
-    LNS13000000 = as.numeric(LNS13000000),
-    unrate = LNS13000000 / LNS11000000,
-    date = as.Date(paste0(year, "/", month, "/", 1))
-  )
-
-# ── Data: Revisions from cached CSV ──────────────────────────────────────
-
-revisions_df <- read_csv("data/bls_ces_monthly_revisions.csv") %>%
-  mutate(
-    non_na_count = rowSums(
-      !is.na(select(., starts_with("sa_"), starts_with("nsa_")))
-    )
-  ) %>%
-  arrange(year, month_num, non_na_count) %>%
-  group_by(year, month_num) %>%
-  slice_tail(n = 1) %>%
-  ungroup() %>%
-  select(-non_na_count)
+if (!exists("revisions_df")) {
+  stop("Expected `revisions_df` to be loaded before sourcing 01_initial_tweet.R.")
+}
 
 # ── Left panel: Job revisions (1st, 2nd, 3rd estimates) ──────────────────
 
@@ -203,7 +167,7 @@ combined <- p_left + p_right +
 combined
 
 ggsave(
-  "graphics/02a_initial_tweet.png",
+  "graphics/01_initial_tweet.png",
   plot = combined,
   dpi = "retina",
   width = 16,
@@ -212,23 +176,6 @@ ggsave(
 )
 
 # ── Generate tweet text ──────────────────────────────────────────────────
-
-# Jobs vs consensus
-jobs_diff <- latest_jobs - consensus_jobs
-jobs_vs <- if_else(
-  jobs_diff >= 0,
-  paste0(comma(abs(round(jobs_diff))), "k above"),
-  paste0(comma(abs(round(jobs_diff))), "k below")
-)
-if (jobs_diff == 0) jobs_vs <- "right at"
-
-# Unemployment vs consensus
-unrate_diff <- latest_unrate - consensus_unrate
-unrate_vs <- if_else(
-  unrate_diff > 0.0001,
-  "above",
-  if_else(unrate_diff < -0.0001, "below", "in line with")
-)
 
 # Revisions
 rev_value <- revisions_df %>%
@@ -245,10 +192,7 @@ rev_text <- paste0(comma(abs(round(rev_sum))), "k")
 
 tweet <- paste0(
   latest_month_name, " jobs report: ",
-  comma(round(latest_jobs)), "k jobs added (",
-  jobs_vs, " the ", comma(consensus_jobs), "k consensus), ",
-  "unemployment at ", percent(latest_unrate, accuracy = 0.1),
-  " (", unrate_vs, " expectations). ",
+  comma(round(latest_jobs)), "k jobs added. ",
   "Prior two months ", rev_direction, " ", rev_text, ".\n\n",
   "Let's dig in. /1"
 )

@@ -7,7 +7,7 @@ duration <- get_n_series_table(
   ),
   api_key = bls_get_key(),
   start_year = 2019,
-  end_year = 2025,
+  end_year = as.integer(format(Sys.Date(), "%Y")),
   tidy = TRUE
 ) %>%
   mutate(date = as.Date(paste0(year, "/", month, "/", 1))) %>%

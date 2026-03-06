@@ -1,16 +1,23 @@
+library(patchwork)
+
+bls_set_key(Sys.getenv("BLS_KEY"))
+
 positive_color <- "#2c3254" # Bright blue
-negative_color <- "#ff8361" # Pale violet
+esp_bg <- "#f4f2e4"
 
 liberation_day <- as.Date("2025-04-01")
-display_start <- as.Date("2024-01-01")
+display_start <- as.Date("2025-01-01")
 
-health_jobs <- get_n_series_table(
+jobs_mix <- get_n_series_table(
   c(
     "CES6562000001",
+    "CES0500000001",
+    "CES0500000010",
     "CES0600000001",
     "CES4300000001",
-    "CES0500000001",
-    "CES4422000001"
+    "CES4422000001",
+    "CES0000000001",
+    "CES0000000010"
   ),
   api_key = bls_get_key(),
   start_year = 2020,
@@ -18,62 +25,38 @@ health_jobs <- get_n_series_table(
   tidy = TRUE
 )
 
-health_jobs <- health_jobs %>%
+jobs_mix <- jobs_mix %>%
   mutate(
     date = as.Date(paste0(year, "/", month, "/", 1)),
-    ces_private = CES0500000001 - lag(CES0500000001, 1),
+    total_private = CES0500000001 - lag(CES0500000001, 1),
+    women_private = CES0500000010 - lag(CES0500000010, 1),
+    men_private = total_private - women_private,
+    total_nonfarm = CES0000000001 - lag(CES0000000001, 1),
     health_care = CES6562000001 - lag(CES6562000001, 1),
+    women = CES0000000010 - lag(CES0000000010, 1),
+    men = total_nonfarm - women,
     blue_collar = CES0600000001 + CES4422000001 + CES4300000001,
     blue_collar = blue_collar - lag(blue_collar, 1),
-    other_private = ces_private - health_care - blue_collar
+    other_private = total_private - health_care - blue_collar
   )
 
-# Private versus nonfederal jobs -----
+MI_dates <- date_breaks_n(jobs_mix$date, 6)
 
-MI_dates <- date_breaks_n(health_jobs$date, 6)
-
-health_share_since_liberation <- health_jobs %>%
+private_shares_since_liberation <- jobs_mix %>%
   filter(date >= liberation_day) %>%
   summarize(
-    share = sum(health_care, na.rm = TRUE) / sum(ces_private, na.rm = TRUE)
-  ) %>%
-  pull(share)
-
-title_health_jobs <- sprintf(
-  "%s of All Private Jobs Since Liberation Day Are Health Care",
-  scales::percent(health_share_since_liberation, accuracy = 1)
-)
-
-blue_collar_change_since_liberation <- health_jobs %>%
-  filter(!is.na(blue_collar), date >= liberation_day) %>%
-  summarize(
-    change = sum(blue_collar, na.rm = TRUE),
-    total_gains = sum(ces_private, na.rm = TRUE),
-    share_of_gains = change / total_gains
+    health_share = sum(health_care, na.rm = TRUE) / sum(total_private, na.rm = TRUE),
+    women_share = sum(women_private, na.rm = TRUE) / sum(total_private, na.rm = TRUE)
   )
 
-dec_2024_change <- health_jobs %>%
-  filter(year == 2024) %>%
+overall_shares_since_liberation <- jobs_mix %>%
+  filter(date >= liberation_day) %>%
   summarize(
-    health_care_change = sum(health_care, na.rm = TRUE),
-    blue_collar_change = sum(blue_collar, na.rm = TRUE),
-    total_private_change = sum(ces_private, na.rm = TRUE),
-    health_share = health_care_change / total_private_change,
-    blue_collar_pct = blue_collar_change / total_private_change
+    health_share = sum(health_care, na.rm = TRUE) / sum(total_nonfarm, na.rm = TRUE),
+    women_share = sum(women, na.rm = TRUE) / sum(total_nonfarm, na.rm = TRUE)
   )
 
-subtitle_health_jobs <- sprintf(
-  "Total private jobs, CES. Since Apr 2025, blue-collar jobs gained %s jobs (%s of total gains).\nDec 2024 vs Dec 2023: Health care and social assistance %s of gains; blue-collar jobs %s.",
-  scales::comma(round(blue_collar_change_since_liberation$change * 1000)),
-  scales::percent(
-    blue_collar_change_since_liberation$share_of_gains,
-    accuracy = 0.1
-  ),
-  scales::percent(dec_2024_change$health_share, accuracy = 0.1),
-  scales::percent(dec_2024_change$blue_collar_pct, accuracy = 0.1)
-)
-
-plot_df <- health_jobs %>%
+health_plot_df <- jobs_mix %>%
   select(date, health_care, blue_collar, other_private) %>%
   filter(date >= display_start) %>%
   pivot_longer(
@@ -86,49 +69,146 @@ plot_df <- health_jobs %>%
       type,
       health_care = "Health Care and Social Assistance",
       blue_collar = "Blue-Collar Industries",
-      other_private = "All Other Private Sector Jobs"
+      other_private = "All Other Private Jobs"
     )
   )
 
-
-plot_df %>%
+health_plot <- health_plot_df %>%
   ggplot(aes(x = date, y = value, fill = type)) +
+  geom_vline(
+    xintercept = liberation_day,
+    color = "#B23A48",
+    linetype = "dotted",
+    linewidth = 1
+  ) +
   geom_col(position = "stack") +
   geom_text(
-    data = plot_df %>% filter(year(date) >= 2025),
+    data = health_plot_df,
     aes(label = comma(round(value))),
     position = position_stack(vjust = 0.5),
     color = "white",
-    size = 5
+    size = 4.2
   ) +
   scale_fill_manual(
     breaks = c(
       "Health Care and Social Assistance",
       "Blue-Collar Industries",
-      "All Other Private Sector Jobs"
+      "All Other Private Jobs"
     ),
     values = c(
       "Health Care and Social Assistance" = "#1B7F5A",
       "Blue-Collar Industries" = positive_color,
-      "All Other Private Sector Jobs" = "#6A3D9A"
+      "All Other Private Jobs" = "#6A3D9A"
     )
   ) +
   labs(
-    title = title_health_jobs,
-    subtitle = subtitle_health_jobs,
+    title = NULL,
+    subtitle = NULL,
     x = NULL,
     y = NULL,
     fill = NULL,
-    caption = "CES. Total private. Blue-collar: mining, logging, construction, manufacturing, transportation, warehousing, and utilities (definition via Joey Politano). Mike Konczal, Economic Security Project."
+    caption = NULL
   ) +
   theme_esp() +
+  theme(plot.background = element_rect(fill = esp_bg, color = NA)) +
   theme(legend.position = "top") +
   scale_x_date(date_labels = "%b\n%Y", breaks = MI_dates)
 
+gender_plot_df <- jobs_mix %>%
+  select(date, women_private, men_private) %>%
+  filter(date >= display_start) %>%
+  pivot_longer(
+    c(men_private, women_private),
+    names_to = "gender",
+    values_to = "jobs"
+  ) %>%
+  mutate(gender = recode(gender, men_private = "Men", women_private = "Women"))
+
+gender_plot <- gender_plot_df %>%
+  ggplot(aes(x = date, y = jobs, fill = gender)) +
+  geom_vline(
+    xintercept = liberation_day,
+    color = "#B23A48",
+    linetype = "dotted",
+    linewidth = 1
+  ) +
+  geom_col(position = "stack") +
+  geom_text(
+    data = gender_plot_df,
+    aes(label = comma(round(jobs))),
+    position = position_stack(vjust = 0.5),
+    color = "white",
+    size = 4.2
+  ) +
+  scale_fill_manual(values = c("Men" = "#2c3254", "Women" = "#ff8361")) +
+  labs(
+    title = NULL,
+    subtitle = NULL,
+    x = NULL,
+    y = NULL,
+    fill = NULL,
+    caption = NULL
+  ) +
+  theme_esp() +
+  theme(plot.background = element_rect(fill = esp_bg, color = NA)) +
+  theme(legend.position = "top") +
+  scale_x_date(date_labels = "%b\n%Y", breaks = MI_dates)
+
+combined_title <- sprintf(
+  "Private sector since Liberation Day: %s of job gains went to health care; %s went to women",
+  scales::percent(private_shares_since_liberation$health_share, accuracy = 1),
+  scales::percent(private_shares_since_liberation$women_share, accuracy = 1)
+)
+
+combined_subtitle <- sprintf(
+  "Overall: %s of job gains went to health care; %s went to women\nMonthly job gains, Current Employment Statistics, private sector only.",
+  scales::percent(overall_shares_since_liberation$health_share, accuracy = 1),
+  scales::percent(overall_shares_since_liberation$women_share, accuracy = 1)
+)
+
+combined_graphic <- health_plot + gender_plot +
+  plot_annotation(
+    title = combined_title,
+    subtitle = combined_subtitle,
+    caption = "CES, seasonally adjusted. Liberation Day marked by dotted red line.\nBlue-collar: mining, logging, construction, manufacturing, transportation, warehousing, and utilities (definition via Joey Politano). Mike Konczal, Economic Security Project.",
+    theme = theme(
+      plot.title = element_text(size = 24, face = "bold", color = positive_color),
+      plot.subtitle = element_text(size = 16, color = positive_color),
+      plot.caption = element_text(size = 11, color = "grey40")
+      ,
+      plot.background = element_rect(fill = esp_bg, color = NA)
+    )
+  )
+
+health_plot
+
 ggsave(
   "graphics/04_health_care.png",
+  plot = health_plot,
   dpi = "retina",
   width = 12,
   height = 6.75,
+  units = "in"
+)
+
+gender_plot
+
+ggsave(
+  "graphics/02e_gender.png",
+  plot = gender_plot,
+  dpi = "retina",
+  width = 12,
+  height = 6.75,
+  units = "in"
+)
+
+combined_graphic
+
+ggsave(
+  "graphics/04_health_care_gender_combined.png",
+  plot = combined_graphic,
+  dpi = "retina",
+  width = 16,
+  height = 7.5,
   units = "in"
 )

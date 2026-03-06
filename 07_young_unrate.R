@@ -13,7 +13,7 @@ young_unrate <- get_n_series_table(
   c("LNS14000037", "LNS14000038"),
   api_key = bls_get_key(),
   start_year = 2017,
-  end_year = 2025,
+  end_year = year(Sys.Date()),
   tidy = TRUE
 )
 
