@@ -143,7 +143,7 @@ def _session_with_retries():
     retries = Retry(
         total=5,
         backoff_factor=0.8,
-        status_forcelist=(403, 408, 429, 500, 502, 503, 504),
+        status_forcelist=(408, 429, 500, 502, 503, 504),
         allowed_methods=("GET", "HEAD"),
         raise_on_status=False,
         respect_retry_after_header=True,
@@ -155,21 +155,17 @@ def _session_with_retries():
     return s
 
 def _download_html(url: str) -> str:
+    """Download HTML, using curl_cffi (Chrome TLS impersonation) to bypass Akamai bot detection."""
+    try:
+        from curl_cffi import requests as cffi_requests
+        r = cffi_requests.get(url, impersonate="chrome120", timeout=30)
+        r.raise_for_status()
+        return r.text
+    except ImportError:
+        print("curl_cffi not installed; falling back to requests (may be blocked). Run: pip install curl-cffi", file=sys.stderr)
+
     sess = _session_with_retries()
-
-    # First attempt
     r = sess.get(url, timeout=30)
-    if r.status_code == 403:
-        # Try a small delay & alternate UA string
-        time.sleep(1.2)
-        sess.headers.update({
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) "
-                "Gecko/20100101 Firefox/128.0"
-            )
-        })
-        r = sess.get(url, timeout=30)
-
     r.raise_for_status()
     r.encoding = r.apparent_encoding or "utf-8"
     return r.text
