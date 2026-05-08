@@ -18,7 +18,9 @@ if (!exists("unrate")) {
 }
 
 if (!exists("revisions_df")) {
-  stop("Expected `revisions_df` to be loaded before sourcing 01_initial_tweet.R.")
+  stop(
+    "Expected `revisions_df` to be loaded before sourcing 01_initial_tweet.R."
+  )
 }
 
 # ── Left panel: Job revisions (1st, 2nd, 3rd estimates) ──────────────────
@@ -54,7 +56,10 @@ revisions_long <- all_months %>%
 
 pos <- position_dodge2(width = 0.65, preserve = "single", padding = 0)
 
-p_left <- ggplot(revisions_long, aes(x = month_label, y = jobs, fill = estimate)) +
+p_left <- ggplot(
+  revisions_long,
+  aes(x = month_label, y = jobs, fill = estimate)
+) +
   geom_col(position = pos, width = 0.65, na.rm = TRUE) +
   geom_text(
     aes(label = comma(jobs), group = estimate),
@@ -77,7 +82,8 @@ p_left <- ggplot(revisions_long, aes(x = month_label, y = jobs, fill = estimate)
   labs(
     title = "Monthly Jobs: 1st, 2nd, 3rd Estimates",
     subtitle = "Total nonfarm, thousands",
-    x = NULL, y = NULL
+    x = NULL,
+    y = NULL
   ) +
   theme_esp() +
   theme(
@@ -109,7 +115,7 @@ p_right <- ggplot(
   geom_point(aes(date, dateTag), size = 3.5, color = positive_color) +
   geom_text(
     aes(date, dateTag),
-    nudge_x = 30,
+    nudge_x = 20,
     color = positive_color,
     size = 4.5,
     na.rm = TRUE
@@ -122,7 +128,8 @@ p_right <- ggplot(
   labs(
     title = "Unemployment Rate",
     subtitle = "Calculated from CPS levels",
-    x = NULL, y = NULL
+    x = NULL,
+    y = NULL
   ) +
   theme_esp() +
   theme(
@@ -144,20 +151,26 @@ latest_unrate <- unrate %>%
 latest_month_name <- format(max(unrate$date, na.rm = TRUE), "%B %Y")
 
 combined_title <- paste0(
-  latest_month_name, ": ",
-  comma(round(latest_jobs)), "k Jobs Added, ",
-  percent(latest_unrate, accuracy = 0.1), " Unemployment"
+  latest_month_name,
+  ": ",
+  comma(round(latest_jobs)),
+  "k Jobs Added, ",
+  percent(latest_unrate, accuracy = 0.1),
+  " Unemployment"
 )
 
 esp_bg <- "#f4f2e4"
 
-combined <- p_left + p_right +
+combined <- p_left +
+  p_right +
   plot_annotation(
     title = combined_title,
     caption = "BLS, CES & CPS, seasonally adjusted. Mike Konczal, Economic Security Project.",
     theme = theme(
       plot.title = element_text(
-        size = 18, face = "bold", color = positive_color
+        size = 18,
+        face = "bold",
+        color = positive_color
       ),
       plot.caption = element_text(size = 11, color = "grey40"),
       plot.background = element_rect(fill = esp_bg, color = NA)
@@ -191,9 +204,15 @@ rev_direction <- if_else(rev_sum < 0, "revised down", "revised up")
 rev_text <- paste0(comma(abs(round(rev_sum))), "k")
 
 tweet <- paste0(
-  latest_month_name, " jobs report: ",
-  comma(round(latest_jobs)), "k jobs added. ",
-  "Prior two months ", rev_direction, " ", rev_text, ".\n\n",
+  latest_month_name,
+  " jobs report: ",
+  comma(round(latest_jobs)),
+  "k jobs added. ",
+  "Prior two months ",
+  rev_direction,
+  " ",
+  rev_text,
+  ".\n\n",
   "Let's dig in. /1"
 )
 

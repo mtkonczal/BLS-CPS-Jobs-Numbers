@@ -301,3 +301,84 @@ ggsave(
   height = 9,
   units = "in"
 )
+
+# --- Unemployed -> Not in Labor Force standalone plots ---
+
+u_to_nlf <- flows_raw %>%
+  filter(series_id == "LNS17900000") %>%
+  inner_join(
+    unrate %>%
+      mutate(date = as.Date(paste0(year, "/", month, "/", 1))) %>%
+      select(date, lf_level = LNS11000000),
+    by = "date"
+  ) %>%
+  mutate(value = value / lf_level) %>%
+  filter(year(date) >= 2022)
+
+u_to_nlf_labels <- u_to_nlf %>%
+  filter(date == max(date)) %>%
+  mutate(
+    label_date = date + days(24),
+    label = percent(value, accuracy = 0.01)
+  )
+
+u_to_nlf_dates <- date_breaks_n(u_to_nlf$date, 8)
+
+u_to_nlf_base <- u_to_nlf %>%
+  ggplot(aes(date, value)) +
+  geom_line(linewidth = 1.8, color = "#d93b8e") +
+  geom_point(size = 2.6, color = "#d93b8e") +
+  geom_text(
+    data = u_to_nlf_labels,
+    aes(label_date, value, label = label),
+    hjust = 0,
+    size = 5.1,
+    fontface = "bold",
+    color = "#d93b8e"
+  ) +
+  scale_y_continuous(labels = percent_format(accuracy = 0.01)) +
+  scale_x_date(
+    breaks = u_to_nlf_dates,
+    date_labels = "%b\n%Y",
+    expand = expansion(mult = c(0.01, 0.14))
+  ) +
+  labs(
+    title = "Unemployed Workers Leaving the Labor Force",
+    subtitle = "Monthly flow from unemployed to not in the labor force, as a share of the labor force.",
+    x = "",
+    y = "",
+    caption = "BLS CPS, seasonally adjusted. Mike Konczal"
+  ) +
+  coord_cartesian(clip = "off") +
+  theme_esp(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 24, face = "bold"),
+    plot.subtitle = element_text(size = 15),
+    plot.caption.position = "plot",
+    axis.text.x = element_text(size = 12),
+    panel.grid.major.x = element_line(color = "grey82"),
+    panel.grid.major.y = element_line(color = "grey88")
+  )
+
+# Version without trend line
+u_to_nlf_base
+
+ggsave(
+  "graphics/10_u_to_nlf.png",
+  dpi = "retina",
+  width = 12,
+  height = 6.75,
+  units = "in"
+)
+
+# Version with trend line
+u_to_nlf_base +
+  geom_smooth(method = "lm", se = FALSE, color = "grey40", linetype = "dashed", linewidth = 1)
+
+ggsave(
+  "graphics/10_u_to_nlf_trend.png",
+  dpi = "retina",
+  width = 12,
+  height = 6.75,
+  units = "in"
+)

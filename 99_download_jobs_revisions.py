@@ -210,6 +210,10 @@ def scrape_bls_revisions(source_url: str = SOURCE_URL) -> pd.DataFrame:
     )
     df = df.drop(columns=["row_order", "non_na_count"]).sort_values(["year", "month_num"]).reset_index(drop=True)
 
+    # Drop rows where all SA/NSA value columns are NA (empty future months)
+    numeric_cols2 = [c for c in df.columns if re.search(r"(^sa_|^nsa_)", c)]
+    df = df.dropna(subset=numeric_cols2, how="all").reset_index(drop=True)
+
     # Add a proper date column (YYYY-MM-01)
     df["date"] = pd.to_datetime(
         dict(year=df["year"], month=df["month_num"], day=1),

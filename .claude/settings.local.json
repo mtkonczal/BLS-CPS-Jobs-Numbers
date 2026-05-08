@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(grep -r \"65\\\\|6562\\\\|health\" /Users/mtkonczal/Documents/GitHub/BLS-CPS-Jobs-Numbers/*.R)",
+      "Bash(grep -r \"data_type_code ==\" /Users/mtkonczal/Documents/GitHub/BLS-CPS-Jobs-Numbers/*.R)",
+      "Bash(grep -roh 'ces_data\\\\$[a-z_]*\\\\|ces\\\\$[a-z_]*' /Users/mtkonczal/Documents/GitHub/BLS-CPS-Jobs-Numbers/*.R)"
+    ]
+  }
+}

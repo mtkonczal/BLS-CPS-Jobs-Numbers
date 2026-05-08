@@ -1,4 +1,4 @@
-graphic_duration_title <- "Unemployment Duration Picks Up, Above 2019 Levels"
+graphic_duration_title <- "Unemployment Duration Picks Up, Above 2024 Levels"
 
 duration <- get_n_series_table(
   c(
@@ -28,7 +28,7 @@ duration <- get_n_series_table(
 duration$value <- as.numeric(duration$value)
 
 #### Graphic 1: Duration Length of Unemployment ####
-g_dates <- duration %>% filter(date >= "2017-01-01")
+g_dates <- duration %>% filter(date >= "2022-01-01")
 g_dates <- unique(g_dates$date)
 g_dates <- sort(g_dates, decreasing = TRUE)
 g_dates <- g_dates[seq(1, length(g_dates), 6)]
@@ -40,7 +40,7 @@ duration %>%
   mutate(last_value = if_else(date == max(date), value, as.numeric(NA))) %>%
   ungroup() %>%
   mutate(pre_value = if_else(year(date) >= 2019, pre_value, as.numeric(NA))) %>%
-  filter(date >= "2017-01-01") %>%
+  filter(date >= "2022-01-01") %>%
   ggplot(aes(date, value, color = type, label = last_value)) +
   geom_line(size = 1.2) +
   geom_point() +

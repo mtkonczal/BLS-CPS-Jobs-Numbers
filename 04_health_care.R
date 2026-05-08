@@ -1,5 +1,3 @@
-library(patchwork)
-
 bls_set_key(Sys.getenv("BLS_KEY"))
 
 positive_color <- "#2c3254" # Bright blue
@@ -37,7 +35,7 @@ jobs_mix <- jobs_mix %>%
     men = total_nonfarm - women,
     blue_collar = CES0600000001 + CES4422000001 + CES4300000001,
     blue_collar = blue_collar - lag(blue_collar, 1),
-    other_private = total_private - health_care - blue_collar
+    other_jobs = total_nonfarm - health_care - blue_collar
   )
 
 MI_dates <- date_breaks_n(jobs_mix$date, 6)
@@ -45,22 +43,25 @@ MI_dates <- date_breaks_n(jobs_mix$date, 6)
 private_shares_since_liberation <- jobs_mix %>%
   filter(date >= liberation_day) %>%
   summarize(
-    health_share = sum(health_care, na.rm = TRUE) / sum(total_private, na.rm = TRUE),
-    women_share = sum(women_private, na.rm = TRUE) / sum(total_private, na.rm = TRUE)
+    health_share = sum(health_care, na.rm = TRUE) /
+      sum(total_private, na.rm = TRUE),
+    women_share = sum(women_private, na.rm = TRUE) /
+      sum(total_private, na.rm = TRUE)
   )
 
 overall_shares_since_liberation <- jobs_mix %>%
   filter(date >= liberation_day) %>%
   summarize(
-    health_share = sum(health_care, na.rm = TRUE) / sum(total_nonfarm, na.rm = TRUE),
+    health_share = sum(health_care, na.rm = TRUE) /
+      sum(total_nonfarm, na.rm = TRUE),
     women_share = sum(women, na.rm = TRUE) / sum(total_nonfarm, na.rm = TRUE)
   )
 
 health_plot_df <- jobs_mix %>%
-  select(date, health_care, blue_collar, other_private) %>%
+  select(date, health_care, blue_collar, other_jobs) %>%
   filter(date >= display_start) %>%
   pivot_longer(
-    c(health_care, blue_collar, other_private),
+    c(health_care, blue_collar, other_jobs),
     names_to = "type",
     values_to = "value"
   ) %>%
@@ -69,9 +70,21 @@ health_plot_df <- jobs_mix %>%
       type,
       health_care = "Health Care and Social Assistance",
       blue_collar = "Blue-Collar Industries",
-      other_private = "All Other Private Jobs"
+      other_jobs = "All Other Jobs"
     )
   )
+
+health_title <- sprintf(
+  "Since Liberation Day: %s of all job gains went to health care",
+  scales::percent(overall_shares_since_liberation$health_share, accuracy = 1)
+)
+
+health_title <- sprintf(
+  "Broader Job Growth in 2026",
+  scales::percent(overall_shares_since_liberation$health_share, accuracy = 1)
+)
+
+health_subtitle <- "Monthly job gains, Current Employment Statistics, total nonfarm."
 
 health_plot <- health_plot_df %>%
   ggplot(aes(x = date, y = value, fill = type)) +
@@ -93,25 +106,30 @@ health_plot <- health_plot_df %>%
     breaks = c(
       "Health Care and Social Assistance",
       "Blue-Collar Industries",
-      "All Other Private Jobs"
+      "All Other Jobs"
     ),
     values = c(
       "Health Care and Social Assistance" = "#1B7F5A",
       "Blue-Collar Industries" = positive_color,
-      "All Other Private Jobs" = "#6A3D9A"
+      "All Other Jobs" = "#6A3D9A"
     )
   ) +
   labs(
-    title = NULL,
-    subtitle = NULL,
+    title = health_title,
+    subtitle = health_subtitle,
     x = NULL,
     y = NULL,
     fill = NULL,
-    caption = NULL
+    caption = "CES, seasonally adjusted. Liberation Day marked by dotted red line.\nBlue-collar: mining, logging, construction, manufacturing, transportation, warehousing, and utilities (definition via Joey Politano). Mike Konczal, Economic Security Project."
   ) +
   theme_esp() +
-  theme(plot.background = element_rect(fill = esp_bg, color = NA)) +
-  theme(legend.position = "top") +
+  theme(
+    plot.title = element_text(size = 24, face = "bold", color = positive_color),
+    plot.subtitle = element_text(size = 16, color = positive_color),
+    plot.caption = element_text(size = 11, color = "grey40"),
+    plot.background = element_rect(fill = esp_bg, color = NA),
+    legend.position = "top"
+  ) +
   scale_x_date(date_labels = "%b\n%Y", breaks = MI_dates)
 
 gender_plot_df <- jobs_mix %>%
@@ -123,6 +141,16 @@ gender_plot_df <- jobs_mix %>%
     values_to = "jobs"
   ) %>%
   mutate(gender = recode(gender, men_private = "Men", women_private = "Women"))
+
+gender_title <- sprintf(
+  "Private sector since Liberation Day: %s of job gains went to women",
+  scales::percent(private_shares_since_liberation$women_share, accuracy = 1)
+)
+
+gender_subtitle <- sprintf(
+  "Overall: %s of job gains went to women\nMonthly job gains, Current Employment Statistics, private sector only.",
+  scales::percent(overall_shares_since_liberation$women_share, accuracy = 1)
+)
 
 gender_plot <- gender_plot_df %>%
   ggplot(aes(x = date, y = jobs, fill = gender)) +
@@ -142,43 +170,22 @@ gender_plot <- gender_plot_df %>%
   ) +
   scale_fill_manual(values = c("Men" = "#2c3254", "Women" = "#ff8361")) +
   labs(
-    title = NULL,
-    subtitle = NULL,
+    title = gender_title,
+    subtitle = gender_subtitle,
     x = NULL,
     y = NULL,
     fill = NULL,
-    caption = NULL
+    caption = "CES, seasonally adjusted. Liberation Day marked by dotted red line. Mike Konczal, Economic Security Project."
   ) +
   theme_esp() +
-  theme(plot.background = element_rect(fill = esp_bg, color = NA)) +
-  theme(legend.position = "top") +
+  theme(
+    plot.title = element_text(size = 24, face = "bold", color = positive_color),
+    plot.subtitle = element_text(size = 16, color = positive_color),
+    plot.caption = element_text(size = 11, color = "grey40"),
+    plot.background = element_rect(fill = esp_bg, color = NA),
+    legend.position = "top"
+  ) +
   scale_x_date(date_labels = "%b\n%Y", breaks = MI_dates)
-
-combined_title <- sprintf(
-  "Private sector since Liberation Day: %s of job gains went to health care; %s went to women",
-  scales::percent(private_shares_since_liberation$health_share, accuracy = 1),
-  scales::percent(private_shares_since_liberation$women_share, accuracy = 1)
-)
-
-combined_subtitle <- sprintf(
-  "Overall: %s of job gains went to health care; %s went to women\nMonthly job gains, Current Employment Statistics, private sector only.",
-  scales::percent(overall_shares_since_liberation$health_share, accuracy = 1),
-  scales::percent(overall_shares_since_liberation$women_share, accuracy = 1)
-)
-
-combined_graphic <- health_plot + gender_plot +
-  plot_annotation(
-    title = combined_title,
-    subtitle = combined_subtitle,
-    caption = "CES, seasonally adjusted. Liberation Day marked by dotted red line.\nBlue-collar: mining, logging, construction, manufacturing, transportation, warehousing, and utilities (definition via Joey Politano). Mike Konczal, Economic Security Project.",
-    theme = theme(
-      plot.title = element_text(size = 24, face = "bold", color = positive_color),
-      plot.subtitle = element_text(size = 16, color = positive_color),
-      plot.caption = element_text(size = 11, color = "grey40")
-      ,
-      plot.background = element_rect(fill = esp_bg, color = NA)
-    )
-  )
 
 health_plot
 
@@ -199,16 +206,5 @@ ggsave(
   dpi = "retina",
   width = 12,
   height = 6.75,
-  units = "in"
-)
-
-combined_graphic
-
-ggsave(
-  "graphics/04_health_care_gender_combined.png",
-  plot = combined_graphic,
-  dpi = "retina",
-  width = 16,
-  height = 7.5,
   units = "in"
 )

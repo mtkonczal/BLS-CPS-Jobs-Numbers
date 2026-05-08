@@ -10,7 +10,7 @@ source("scripts/graphic_scripts.R")
 
 
 ##### TITLES #####
-title4_unrate_by_type <- "Job Losers and New Entrants Drive Unemployment Increase"
+title4_unrate_by_type <- "Unemployment Slowed Across the Board"
 title5_ahe <- "Average Hourly Earnings Remain Volatile"
 
 
