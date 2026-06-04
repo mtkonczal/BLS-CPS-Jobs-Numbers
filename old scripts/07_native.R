@@ -3,6 +3,9 @@ library(lubridate)
 library(scales)
 library(seasonal) # seas(), seasadj()
 library(forecast)
+library(tidyusmacro)
+
+cps_jobs_data <-getBLSFiles("cps", "konczal@gmail.com")
 
 # ---- Your function (used as-is) ----
 seasonal_adjust <- function(x, date) {
@@ -26,6 +29,17 @@ unrate_native <- cps_jobs_data %>%
 # ---- Prime-age (25–54) native-born EPOP (level in decimals) ----
 prime_pop_native <- c("LNU00073417", "LNU00073418", "LNU00073419")
 prime_emp_native <- c("LNU02073417", "LNU02073418", "LNU02073419")
+
+
+prime_pop_native <- c("LNU00073417", "LNU00073418", "LNU00073419")
+prime_emp_native <- c("LNU02073417", "LNU02073418", "LNU02073419")
+
+cps_jobs_data %>% filter(series_id == "LNU02073417") %>%
+  select(series_title)
+
+cps_jobs_data %>% filter(series_title == "(Unadj) Employment Level - Foreign born, 25 to 34 years") %>%
+  select(series_id)
+
 
 prime_epop_native <- cps_jobs_data %>%
   filter(
