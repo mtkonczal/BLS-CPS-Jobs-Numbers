@@ -11,7 +11,7 @@ positive_color <- "#2c3254"
 negative_color <- "#ff8361"
 green_color <- "#70ad8f"
 
-how_many_months <- 6
+how_many_months <- 8
 
 if (!exists("unrate")) {
   stop("Expected `unrate` to be loaded before sourcing 01_initial_tweet.R.")
@@ -96,7 +96,7 @@ p_left <- ggplot(
 
 unrate_plot <- unrate %>%
   filter(!is.na(unrate)) %>%
-  filter(date > max(date) %m-% months(12)) %>%
+  filter(date > max(date) %m-% months(24)) %>%
   mutate(
     dateTag = if_else(
       date >= max(date) %m-% months(how_many_months - 1),
@@ -115,9 +115,9 @@ p_right <- ggplot(
   geom_point(aes(date, dateTag), size = 3.5, color = positive_color) +
   geom_text(
     aes(date, dateTag),
-    nudge_x = 20,
+    nudge_x = 30,
     color = positive_color,
-    size = 4.5,
+    size = 3.5,
     na.rm = TRUE
   ) +
   scale_y_continuous(labels = percent) +

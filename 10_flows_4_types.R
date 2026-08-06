@@ -240,7 +240,7 @@ flows_clean <- flows %>%
 
 flows_clean_labels <- flows_clean %>%
   group_by(series_label) %>%
-  filter(date == max(date)) %>%
+  filter(date >= max(date) %m-% months(1)) %>%
   ungroup() %>%
   mutate(
     label_date = date + days(24),
@@ -373,7 +373,13 @@ ggsave(
 
 # Version with trend line
 u_to_nlf_base +
-  geom_smooth(method = "lm", se = FALSE, color = "grey40", linetype = "dashed", linewidth = 1)
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    color = "grey40",
+    linetype = "dashed",
+    linewidth = 1
+  )
 
 ggsave(
   "graphics/10_u_to_nlf_trend.png",

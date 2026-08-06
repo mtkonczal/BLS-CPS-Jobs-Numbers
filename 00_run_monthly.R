@@ -84,3 +84,34 @@ ces_data$data_type_code <- as.numeric(ces_data$data_type_code)
 source("13_cyclical_industries.R")
 make_jobs_chart(ces_data)
 source("98_revisions_estimate.R")
+
+
+ces_data %>% filter(industry_display_level == 2) %>% distinct(supersector_name)
+
+ces_data %>%
+  filter(supersector_name == "Financial activities") %>%
+  filter(date == "2025-01-01", seasonal == "S", data_type_code == 1) %>%
+  group_by(industry_display_level) %>%
+  summarize(n = n(), count = sum(value))
+
+
+ces_data %>%
+  filter(supersector_name == "Financial activities") %>%
+  filter(seasonal == "S", data_type_code == 1, year(date) >= 2019) %>%
+  #filter(industry_display_level == 4) %>%
+  ggplot(aes(date, value)) +
+  geom_line() +
+  facet_wrap(~industry_name, scales = "free")
+
+
+tk <- ces_data %>%
+  filter(supersector_name == "Financial activities") %>%
+  filter(seasonal == "S", data_type_code == 1) %>%
+  group_by(industry_name) %>%
+  summarize(
+    display_level = industry_display_level[date == "2025-01-01"],
+    jobs_end_2024 = value[date == "2024-12-01"],
+    jobs_may_2026 = value[date == "2026-05-01"],
+    diff = jobs_may_2026 - jobs_end_2024
+  ) %>%
+  arrange(diff)
