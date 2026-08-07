@@ -10,13 +10,11 @@ library(viridis)
 source("scripts/graphic_scripts.R")
 
 
-##### TITLES #####
-title1 <- "Unemployment Is Increasing"
-title2 <- "Weak Initial Number, and Now First Month of Negative Job Growth"
-title3 <- "More Than Half of Industries Are Gaining Jobs"
-
 positive_color <- "#2c3254" # Bright blue
 negative_color <- "#ff8361" # Pale violet
+
+# Diffusion index panel starts here; earlier months only feed the 3-month average.
+diffusion_start <- as.Date("2018-01-01")
 
 required_unrate_columns <- c(
   "LNS13000000",
@@ -65,115 +63,130 @@ if (!exists("unrate") || !all(required_unrate_columns %in% names(unrate))) {
 }
 
 
-# Unemployment Rate ----
-unrate %>%
-  filter(date > max(date) %m-% months(24)) %>%
-  filter(!is.na(unrate)) %>%
-  mutate(
-    dateTag = if_else(
-      date >= max(date) %m-% months(5) | date == "2024-12-01",
-      round(unrate, 4),
-      NA
-    )
-  ) %>%
-  ggplot(aes(date, unrate, label = percent(dateTag, 0.01))) +
-  geom_line(linewidth = 1.2, color = positive_color) +
-  geom_text(
-    aes(date, dateTag),
-    nudge_x = 35,
-    color = positive_color,
-    size = 5.5
-  ) +
-  geom_point(aes(date, dateTag), size = 4, color = positive_color) +
-  scale_y_continuous(label = percent) +
-  theme_esp() +
-  labs(
-    title = title1,
-    subtitle = "Unemployment Rate, Manually Calculated",
-    caption = "Mike Konczal, Economic Security Project."
-  ) +
-  scale_x_date(
-    date_labels = "%b\n%Y",
-    breaks = date_breaks_gg(6, max(unrate$date))
-  ) +
-  scale_fill_brewer(palette = "Paired") +
-  theme(
-    panel.grid.major.y = element_line(color = "grey80")
-  )
-
-ggsave(
-  "graphics/02a_unrate.png",
-  dpi = "retina",
-  width = 12,
-  height = 6.75,
-  units = "in"
-)
-
-
-# CES Jobs Gained ----
-unrate %>%
-  mutate(
-    dateTag = if_else(date >= max(date) %m-% months(5), ces, NA),
-    ces3m = ces + lag(ces, 1) + lag(ces, 2),
-    ces3m = ces3m / 3,
-    fill_color = if_else(date == max(date), positive_color, negative_color),
-    text_color = if_else(date == max(date), positive_color, negative_color)
-  ) %>%
-  filter(date >= "2023-01-01") %>%
-  ggplot(aes(date, ces, label = dateTag)) +
-  geom_col(aes(fill = fill_color), size = 0, show.legend = FALSE) +
-  geom_text(aes(color = text_color), nudge_y = 10, show.legend = FALSE) +
-  labs(
-    title = title2,
-    subtitle = "Monthly jobs gained. CES",
-    caption = "Mike Konczal, Economic Security Project."
-  ) +
-  scale_fill_identity() +
-  scale_color_identity() +
-  theme_esp() +
-  scale_x_date(
-    date_labels = "%b\n%Y",
-    breaks = date_breaks_gg(6, max(unrate$date))
-  ) +
-  theme(
-    panel.grid.major.y = element_line(color = "grey80"),
-  )
-
-ggsave(
-  "graphics/02b_jobs_gained.png",
-  dpi = "retina",
-  width = 12,
-  height = 6.75,
-  units = "in"
-)
-
-
 # Diffusion index ----
-unrate %>%
-  #  filter(date >= "2023-07-01") %>%
-  filter(year(date) >= 2017) %>%
-  mutate(
-    dateTag = if_else(date >= max(date) %m-% months(0), round(diffusion, 4), NA)
-  ) %>%
-  ggplot(aes(date, diffusion, label = percent(dateTag))) +
-  geom_line(linewidth = 1.2) +
-  geom_text(aes(date, dateTag), nudge_x = 70) +
-  geom_point(aes(date, dateTag)) +
-  scale_y_continuous(label = percent) +
-  theme_esp() +
+# CES0500000021: "Diffusion indexes, 1-month span, total private, seasonally
+# adjusted." Share of private industries adding jobs over the month, with
+# unchanged industries counted as half. 50% is the neutral line.
+
+diffusion_df <- unrate %>%
+  filter(!is.na(diffusion)) %>%
+  arrange(date) %>%
+  # Rolled before the window filter so January 2018 already has a full window.
+  mutate(diffusion_3m = rollmean(diffusion, 3, align = "right", fill = NA)) %>%
+  filter(date >= diffusion_start)
+
+latest_diffusion <- diffusion_df %>% slice_max(date, n = 1)
+
+latest_3m <- diffusion_df %>%
+  filter(!is.na(diffusion_3m)) %>%
+  slice_max(date, n = 1)
+
+# Headline follows the data rather than being retyped each month.
+title3 <- if (latest_diffusion$diffusion > 0.5) {
+  "More Than Half of Industries Are Gaining Jobs"
+} else {
+  "Fewer Than Half of Industries Are Gaining Jobs"
+}
+
+# Hard right edge leaves room for the two end labels without an Inf-on-Date
+# annotation stretching the panel.
+diffusion_x_max <- max(diffusion_df$date) %m+% months(14)
+
+# Each label carries the colour of the line it describes: faint for the monthly
+# series, solid for the 3-month average.
+diffusion_end_labels <- bind_rows(
+  latest_diffusion %>%
+    transmute(
+      date,
+      value = diffusion,
+      label = paste0("Latest month: ", percent(diffusion, 1)),
+      label_color = alpha(positive_color, 0.55)
+    ),
+  latest_3m %>%
+    transmute(
+      date,
+      value = diffusion_3m,
+      label = paste0("3-month average: ", percent(diffusion_3m, 1)),
+      label_color = positive_color
+    )
+)
+
+ggplot(diffusion_df, aes(date, diffusion)) +
+  # Below 50% more industries are cutting than adding.
+  annotate(
+    "rect",
+    xmin = diffusion_start,
+    xmax = diffusion_x_max,
+    ymin = -Inf,
+    ymax = 0.5,
+    fill = negative_color,
+    alpha = 0.07
+  ) +
+  geom_hline(
+    yintercept = 0.5,
+    color = negative_color,
+    linetype = "dashed",
+    linewidth = 0.7
+  ) +
+  geom_line(color = positive_color, linewidth = 0.5, alpha = 0.45) +
+  geom_line(
+    aes(y = diffusion_3m),
+    color = positive_color,
+    linewidth = 1.4,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    data = latest_diffusion,
+    color = positive_color,
+    size = 2.6,
+    alpha = 0.5
+  ) +
+  geom_point(
+    data = latest_3m,
+    aes(y = diffusion_3m),
+    color = positive_color,
+    size = 3
+  ) +
+  geom_text_repel(
+    data = diffusion_end_labels,
+    aes(date, value, label = label, color = label_color),
+    inherit.aes = FALSE,
+    hjust = 0,
+    nudge_x = 40,
+    direction = "y",
+    seed = 42,
+    size = 4.2,
+    fontface = "bold",
+    show.legend = FALSE,
+    segment.color = "grey55",
+    segment.size = 0.3,
+    min.segment.length = 0.3
+  ) +
+  scale_color_identity() +
+  scale_y_continuous(
+    labels = percent,
+    breaks = seq(0, 0.8, 0.1),
+    expand = expansion(mult = c(0.02, 0.05))
+  ) +
+  scale_x_date(
+    date_labels = "%b\n%Y",
+    breaks = date_breaks_gg(12, max(diffusion_df$date)),
+    limits = c(diffusion_start, diffusion_x_max),
+    expand = expansion(mult = c(0.01, 0))
+  ) +
   labs(
     title = title3,
-    subtitle = "Percent of Job Categories That Gained Jobs",
-    caption = "Mike Konczal, Economic Security Project."
+    subtitle = "Share of 250 private-sector subindustries making up the labor market that added jobs over the month.",
+    x = NULL,
+    y = NULL,
+    caption = "BLS, CES, 1-month diffusion index, total private, seasonally adjusted. Mike Konczal, Economic Security Project."
   ) +
-  scale_x_date(
-    date_labels = "%b\n%Y",
-    breaks = date_breaks_gg(6, max(unrate$date))
-  ) +
-  scale_fill_brewer(palette = "Paired") +
-  geom_hline(yintercept = 0.5, color = negative_color, linetype = "dashed") +
+  theme_esp() +
   theme(
+    plot.subtitle = element_text(size = 12, lineheight = 1.2),
+    panel.grid.major.x = element_blank(),
     panel.grid.major.y = element_line(color = "grey80"),
+    axis.text = element_text(size = 11)
   )
 
 ggsave(

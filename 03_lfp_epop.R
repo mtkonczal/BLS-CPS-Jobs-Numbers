@@ -3,456 +3,258 @@ library(ggtext)
 library(blsR)
 library(scales)
 library(lubridate)
+library(patchwork)
 source("scripts/graphic_scripts.R")
 
 bls_set_key(Sys.getenv("BLS_KEY"))
 
-pull_month_value <- function(values, dates, target_date) {
-  matched_value <- values[dates == target_date]
+# Prime-age (25-54) participation and employment. The point of these two is to
+# check whether a flat unemployment rate is being held up by people leaving the
+# labor force: if LFPR falls alongside EPOP, the unemployment rate can hold
+# steady while fewer people are actually working.
 
-  if (length(matched_value) == 0) {
-    return(NA_real_)
+positive_color <- "#2c3254"
+green_color <- "#70ad8f"
+
+# Post-recovery window. Starting in 2019 puts the COVID collapse on the axis and
+# squeezes the 2pp band these series actually move in.
+prime_start <- as.Date("2022-01-01")
+benchmark_year <- 2019
+benchmark_label <- paste(benchmark_year, "average")
+
+prime_age <- get_n_series_table(
+  c(
+    "LNS11300060", # prime-age (25-54) labor force participation rate
+    "LNS12300060" # prime-age (25-54) employment-population ratio
+  ),
+  api_key = bls_get_key(),
+  start_year = benchmark_year,
+  end_year = as.integer(format(Sys.Date(), "%Y")),
+  tidy = TRUE
+) %>%
+  mutate(
+    date = as.Date(paste0(year, "/", month, "/1")),
+    lfpr = suppressWarnings(as.numeric(LNS11300060)) / 100,
+    epop = suppressWarnings(as.numeric(LNS12300060)) / 100
+  ) %>%
+  arrange(date) %>%
+  select(date, lfpr, epop)
+
+# Months with no observation are kept as NA rather than dropped, so the line
+# breaks instead of drawing a straight segment across them. The CPS was not
+# collected in October 2025.
+missing_months <- prime_age %>% filter(is.na(lfpr) | is.na(epop)) %>% pull(date)
+
+benchmarks <- prime_age %>%
+  filter(year(date) == benchmark_year) %>%
+  summarize(
+    lfpr = mean(lfpr, na.rm = TRUE),
+    epop = mean(epop, na.rm = TRUE)
+  )
+
+prime_plot_data <- prime_age %>% filter(date >= prime_start)
+
+prime_breaks <- seq(
+  max(prime_plot_data$date),
+  min(prime_plot_data$date),
+  by = "-6 months"
+)
+
+prime_caption <- paste0(
+  "BLS, CPS, ages 25-54, seasonally adjusted. Dotted line is the ",
+  benchmark_year,
+  " average.",
+  if (length(missing_months) > 0) {
+    paste0(
+      " No observation for ",
+      paste(format(missing_months, "%B %Y"), collapse = ", "),
+      "."
+    )
+  } else {
+    ""
+  },
+  " Mike Konczal, Economic Security Project."
+)
+
+prime_age_chart <- function(
+  measure,
+  line_color,
+  label,
+  show_benchmark_label = TRUE,
+  caption = NULL,
+  title_size = 22,
+  subtitle_size = 14
+) {
+  series <- prime_plot_data %>%
+    transmute(date, value = .data[[measure]])
+
+  latest <- series %>% filter(!is.na(value)) %>% slice_max(date, n = 1)
+  prior <- series %>%
+    filter(!is.na(value), date < latest$date) %>%
+    slice_max(date, n = 1)
+
+  benchmark <- benchmarks[[measure]]
+
+  month_change <- latest$value - prior$value
+  gap_to_benchmark <- latest$value - benchmark
+
+  subtitle <- sprintf(
+    "%s %.1f pp from %s, and %.1f pp %s the %s.",
+    if_else(month_change >= 0, "Up", "Down"),
+    abs(month_change) * 100,
+    format(prior$date, "%B %Y"),
+    abs(gap_to_benchmark) * 100,
+    if_else(gap_to_benchmark >= 0, "above", "below"),
+    benchmark_label
+  )
+
+  plot <- ggplot(series, aes(date, value)) +
+    # Reference line carries the series colour so it reads as that series'
+    # own benchmark rather than as a second variable.
+    geom_hline(
+      yintercept = benchmark,
+      linetype = "dotted",
+      color = line_color,
+      linewidth = 0.9
+    ) +
+    geom_line(linewidth = 1.7, color = line_color, na.rm = TRUE) +
+    geom_point(data = latest, size = 3.4, color = line_color) +
+    geom_text(
+      data = latest,
+      aes(label = percent(value, accuracy = 0.1)),
+      hjust = 0,
+      nudge_x = 30,
+      size = 5.2,
+      fontface = "bold",
+      color = line_color
+    ) +
+    scale_y_continuous(
+      labels = percent_format(accuracy = 0.1),
+      breaks = scales::breaks_pretty(n = 7)
+    ) +
+    scale_x_date(
+      date_labels = "%b\n%Y",
+      breaks = prime_breaks,
+      expand = expansion(mult = c(0.02, 0.11))
+    ) +
+    labs(
+      title = paste0(label, ": ", percent(latest$value, accuracy = 0.1)),
+      subtitle = subtitle,
+      x = NULL,
+      y = NULL,
+      caption = caption
+    ) +
+    theme_esp(base_size = 14) +
+    theme(
+      plot.title = element_text(
+        size = title_size,
+        face = "bold",
+        color = positive_color
+      ),
+      plot.subtitle = element_text(size = subtitle_size, color = positive_color),
+      plot.caption = element_text(size = 10, color = "grey40"),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y = element_line(color = "grey82")
+    )
+
+  if (show_benchmark_label) {
+    # Anchored bottom-right: both series sit well above their benchmark by the
+    # end of the window, so the space under the line there stays clear.
+    plot <- plot +
+      annotate(
+        "text",
+        x = max(series$date),
+        y = benchmark,
+        label = benchmark_label,
+        hjust = 1,
+        vjust = 1.6,
+        size = 4,
+        fontface = "bold",
+        color = line_color
+      )
   }
 
-  matched_value[[1]]
+  plot
 }
 
-lfp_epop_series <- c(
-  "LNS11300000", # overall LFPR
-  "LNS12300000", # overall EPOP
-  "LNS11300060", # prime-age LFPR
-  "LNS12300060" # prime-age EPOP
+# ---- Standalone charts ----
+
+prime_lfp_plot <- prime_age_chart(
+  "lfpr",
+  green_color,
+  "Prime-Age Labor Force Participation Rate",
+  caption = prime_caption
 )
 
-lfp_epop_raw <- get_n_series_table(
-  lfp_epop_series,
-  api_key = bls_get_key(),
-  start_year = 2018,
-  end_year = as.integer(format(Sys.Date(), "%Y")),
-  tidy = TRUE
-) %>%
-  filter(if_all(all_of(lfp_epop_series), ~ .x != "-")) %>%
-  mutate(
-    date = as.Date(paste0(year, "/", month, "/1")),
-    LNS11300000 = as.numeric(LNS11300000) / 100,
-    LNS12300000 = as.numeric(LNS12300000) / 100,
-    LNS11300060 = as.numeric(LNS11300060) / 100,
-    LNS12300060 = as.numeric(LNS12300060) / 100
-  )
-
-lfp_epop <- lfp_epop_raw %>%
-  transmute(
-    date,
-    overall_lfpr = LNS11300000,
-    overall_epop = LNS12300000,
-    prime_lfpr = LNS11300060,
-    prime_epop = LNS12300060
-  )
-
-last_month <- max(lfp_epop$date, na.rm = TRUE)
-plot_start <- as.Date("2019-01-01")
-month_breaks <- sort(unique(lfp_epop$date), decreasing = TRUE)
-month_breaks <- month_breaks[seq(1, length(month_breaks), 4)]
-
-levels_long <- lfp_epop %>%
-  pivot_longer(
-    cols = -date,
-    names_to = c("group", "measure"),
-    names_sep = "_",
-    values_to = "value"
-  ) %>%
-  mutate(
-    group = recode(
-      group,
-      overall = "Overall, 16+",
-      prime = "Prime-age, 25-54"
-    ),
-    measure = recode(
-      measure,
-      lfpr = "Labor-force participation rate",
-      epop = "Employment-population ratio"
-    )
-  )
-
-baseline_df <- levels_long %>%
-  filter(date >= as.Date("2019-01-01"), date <= as.Date("2019-12-01")) %>%
-  group_by(group, measure) %>%
-  summarize(baseline = mean(value, na.rm = TRUE), .groups = "drop")
-
-levels_labels <- levels_long %>%
-  group_by(group, measure) %>%
-  filter(date == max(date)) %>%
-  ungroup() %>%
-  mutate(
-    label_date = date + days(30),
-    label = percent(value, accuracy = 0.1)
-  )
-
-lfp_epop_colors <- c(
-  "Labor-force participation rate" = "#70ad8f",
-  "Employment-population ratio" = "#2c3254"
+prime_epop_plot <- prime_age_chart(
+  "epop",
+  positive_color,
+  "Prime-Age Employment-Population Ratio",
+  caption = prime_caption
 )
-
-levels_long %>%
-  filter(date >= plot_start) %>%
-  ggplot(aes(date, value, color = measure)) +
-  geom_hline(
-    data = baseline_df,
-    aes(yintercept = baseline, color = measure),
-    linetype = "dotted",
-    linewidth = 0.9,
-    show.legend = FALSE
-  ) +
-  geom_line(linewidth = 1.8, show.legend = FALSE) +
-  geom_point(
-    data = levels_labels,
-    size = 3.2,
-    show.legend = FALSE
-  ) +
-  geom_text(
-    data = levels_labels,
-    aes(label_date, value, label = label),
-    hjust = 0,
-    size = 5.1,
-    fontface = "bold",
-    show.legend = FALSE
-  ) +
-  facet_wrap(~group, ncol = 1) +
-  scale_color_manual(values = lfp_epop_colors) +
-  scale_y_continuous(labels = percent_format(accuracy = 1)) +
-  scale_x_date(
-    breaks = month_breaks,
-    date_labels = "%b\n%Y",
-    expand = expansion(mult = c(0.01, 0.16))
-  ) +
-  coord_cartesian(clip = "off") +
-  theme_esp(base_size = 16) +
-  theme(
-    legend.position = "none",
-    plot.title = element_text(size = 24, face = "bold"),
-    plot.subtitle = element_text(size = 15),
-    strip.text = element_text(size = 16, face = "bold"),
-    axis.text.x = element_text(size = 12),
-    panel.grid.major.y = element_line(color = "grey82")
-  ) +
-  labs(
-    title = "Prime-Age EPOP and LFPR Are the Cleaner Read on Labor-Market Slack",
-    subtitle = "Seasonally adjusted. Dotted lines are 2019 averages, the pre-pandemic benchmark many labor-market analysts still watch.",
-    x = "",
-    y = "",
-    caption = "BLS CPS. Mike Konczal, Economic Security Project."
-  )
 
 ggsave(
-  "graphics/03a_lfp_epop_levels.png",
+  "graphics/03a_prime_age_lfp.png",
+  plot = prime_lfp_plot,
   dpi = "retina",
-  width = 12,
-  height = 9,
+  width = 11,
+  height = 6,
   units = "in"
 )
 
-change_summary <- bind_rows(
-  tibble(
-    group = "Overall, 16+",
-    component = c("LFPR", "EPOP", "LFPR - EPOP"),
-    change = c(
-      100 *
-        (pull_month_value(lfp_epop$overall_lfpr, lfp_epop$date, last_month) -
-          pull_month_value(
-            lfp_epop$overall_lfpr,
-            lfp_epop$date,
-            last_month %m-% months(3)
-          )),
-      100 *
-        (pull_month_value(lfp_epop$overall_epop, lfp_epop$date, last_month) -
-          pull_month_value(
-            lfp_epop$overall_epop,
-            lfp_epop$date,
-            last_month %m-% months(3)
-          )),
-      100 *
-        ((pull_month_value(lfp_epop$overall_lfpr, lfp_epop$date, last_month) -
-          pull_month_value(lfp_epop$overall_epop, lfp_epop$date, last_month)) -
-          (pull_month_value(
-            lfp_epop$overall_lfpr,
-            lfp_epop$date,
-            last_month %m-% months(3)
-          ) -
-            pull_month_value(
-              lfp_epop$overall_epop,
-              lfp_epop$date,
-              last_month %m-% months(3)
-            )))
-    )
-  ),
-  tibble(
-    group = "Prime-age, 25-54",
-    component = c("LFPR", "EPOP", "LFPR - EPOP"),
-    change = c(
-      100 *
-        (pull_month_value(lfp_epop$prime_lfpr, lfp_epop$date, last_month) -
-          pull_month_value(
-            lfp_epop$prime_lfpr,
-            lfp_epop$date,
-            last_month %m-% months(3)
-          )),
-      100 *
-        (pull_month_value(lfp_epop$prime_epop, lfp_epop$date, last_month) -
-          pull_month_value(
-            lfp_epop$prime_epop,
-            lfp_epop$date,
-            last_month %m-% months(3)
-          )),
-      100 *
-        ((pull_month_value(lfp_epop$prime_lfpr, lfp_epop$date, last_month) -
-          pull_month_value(lfp_epop$prime_epop, lfp_epop$date, last_month)) -
-          (pull_month_value(
-            lfp_epop$prime_lfpr,
-            lfp_epop$date,
-            last_month %m-% months(3)
-          ) -
-            pull_month_value(
-              lfp_epop$prime_epop,
-              lfp_epop$date,
-              last_month %m-% months(3)
-            )))
-    )
-  )
-) %>%
-  mutate(
-    component = factor(component, levels = c("LFPR", "EPOP", "LFPR - EPOP")),
-    label = sprintf("%+.1f pp", change)
-  )
-
-component_colors <- c(
-  "LFPR" = "#70ad8f",
-  "EPOP" = "#2c3254",
-  "LFPR - EPOP" = "#ff8361"
-)
-
-change_summary %>%
-  ggplot(aes(component, change, fill = component)) +
-  geom_hline(yintercept = 0, color = "grey50", linewidth = 0.5) +
-  geom_col(width = 0.7, show.legend = FALSE) +
-  geom_text(
-    aes(
-      y = change + if_else(change >= 0, 0.08, -0.08),
-      label = label
-    ),
-    size = 5,
-    fontface = "bold"
-  ) +
-  facet_wrap(~group, ncol = 1) +
-  scale_fill_manual(values = component_colors) +
-  scale_y_continuous(labels = label_number(accuracy = 0.1, suffix = " pp")) +
-  theme_esp(base_size = 16) +
-  theme(
-    legend.position = "none",
-    plot.title = element_text(size = 24, face = "bold"),
-    plot.subtitle = element_text(size = 15),
-    strip.text = element_text(size = 16, face = "bold"),
-    panel.grid.major.x = element_blank(),
-    panel.grid.major.y = element_line(color = "grey82")
-  ) +
-  labs(
-    title = "LFPR Gains Are Helpful Only If EPOP Keeps Up",
-    subtitle = paste0(
-      "Three-month change through ",
-      format(last_month, "%B %Y"),
-      ". LFPR - EPOP is the nonemployment share of the population, so a rise there is the more worrisome part."
-    ),
-    x = "",
-    y = "",
-    caption = "BLS CPS. Mike Konczal, Economic Security Project."
-  )
-
 ggsave(
-  "graphics/03b_lfp_epop_change.png",
+  "graphics/03b_prime_age_epop.png",
+  plot = prime_epop_plot,
   dpi = "retina",
-  width = 12,
-  height = 8.5,
+  width = 11,
+  height = 6,
   units = "in"
 )
 
-gender_sector_raw <- get_n_series_table(
-  c(
-    "CES0500000001", # total private
-    "CES0500000010", # private women
-    "CES9091000001", # federal total
-    "CES9091000010", # federal women
-    "CES9092000001", # state total
-    "CES9092000010", # state women
-    "CES9093000001", # local total
-    "CES9093000010" # local women
-  ),
-  api_key = bls_get_key(),
-  start_year = 2024,
-  end_year = as.integer(format(Sys.Date(), "%Y")),
-  tidy = TRUE
-) %>%
-  mutate(
-    date = as.Date(paste0(year, "/", month, "/1")),
-    state_local_total = CES9092000001 + CES9093000001,
-    state_local_women = CES9092000010 + CES9093000010
-  ) %>%
-  transmute(
-    date,
-    private_total = CES0500000001,
-    private_women = CES0500000010,
-    private_men = private_total - private_women,
-    federal_total = CES9091000001,
-    federal_women = CES9091000010,
-    federal_men = federal_total - federal_women,
-    state_local_total,
-    state_local_women,
-    state_local_men = state_local_total - state_local_women
-  )
+# ---- Combined: the two side by side ----
+# Benchmark label only on the left panel, and one shared caption.
 
-sector_last_month <- gender_sector_raw %>%
-  filter(if_all(-date, ~ !is.na(.x))) %>%
-  summarize(last_complete_month = max(date, na.rm = TRUE)) %>%
-  pull(last_complete_month)
-
-sector_baseline <- as.Date("2024-12-01")
-
-gender_sector_growth <- bind_rows(
-  tibble(
-    sector = "Private",
-    men = pull_month_value(
-      gender_sector_raw$private_men,
-      gender_sector_raw$date,
-      sector_last_month
-    ) -
-      pull_month_value(
-        gender_sector_raw$private_men,
-        gender_sector_raw$date,
-        sector_baseline
+prime_combined <- prime_age_chart(
+  "lfpr",
+  green_color,
+  "Labor Force Participation Rate",
+  show_benchmark_label = TRUE,
+  title_size = 17,
+  subtitle_size = 12
+) +
+  prime_age_chart(
+    "epop",
+    positive_color,
+    "Employment-Population Ratio",
+    show_benchmark_label = FALSE,
+    title_size = 17,
+    subtitle_size = 12
+  ) +
+  plot_annotation(
+    title = "Prime-Age Participation and Employment Both Fell in the Latest Month",
+    subtitle = "Ages 25-54. A falling participation rate can hold the unemployment rate down even as employment drops.",
+    caption = prime_caption,
+    theme = theme(
+      plot.title = element_text(
+        size = 22,
+        face = "bold",
+        color = positive_color
       ),
-    women = pull_month_value(
-      gender_sector_raw$private_women,
-      gender_sector_raw$date,
-      sector_last_month
-    ) -
-      pull_month_value(
-        gender_sector_raw$private_women,
-        gender_sector_raw$date,
-        sector_baseline
-      )
-  ),
-  tibble(
-    sector = "Federal",
-    men = pull_month_value(
-      gender_sector_raw$federal_men,
-      gender_sector_raw$date,
-      sector_last_month
-    ) -
-      pull_month_value(
-        gender_sector_raw$federal_men,
-        gender_sector_raw$date,
-        sector_baseline
-      ),
-    women = pull_month_value(
-      gender_sector_raw$federal_women,
-      gender_sector_raw$date,
-      sector_last_month
-    ) -
-      pull_month_value(
-        gender_sector_raw$federal_women,
-        gender_sector_raw$date,
-        sector_baseline
-      )
-  ),
-  tibble(
-    sector = "State/local",
-    men = pull_month_value(
-      gender_sector_raw$state_local_men,
-      gender_sector_raw$date,
-      sector_last_month
-    ) -
-      pull_month_value(
-        gender_sector_raw$state_local_men,
-        gender_sector_raw$date,
-        sector_baseline
-      ),
-    women = pull_month_value(
-      gender_sector_raw$state_local_women,
-      gender_sector_raw$date,
-      sector_last_month
-    ) -
-      pull_month_value(
-        gender_sector_raw$state_local_women,
-        gender_sector_raw$date,
-        sector_baseline
-      )
-  )
-) %>%
-  pivot_longer(c(men, women), names_to = "gender", values_to = "change") %>%
-  mutate(
-    sector = factor(sector, levels = c("Private", "Federal", "State/local")),
-    gender = recode(gender, men = "Men", women = "Women"),
-    label = comma(round(change))
-  )
-
-sector_totals <- gender_sector_growth %>%
-  group_by(sector) %>%
-  summarize(total = sum(change, na.rm = TRUE), .groups = "drop") %>%
-  mutate(
-    label = comma(round(total)),
-    y = total + if_else(total >= 0, 55, -55)
-  )
-
-gender_sector_growth %>%
-  ggplot(aes(sector, change, fill = gender)) +
-  geom_hline(yintercept = 0, color = "grey55", linewidth = 0.5) +
-  geom_col(width = 0.72, color = NA) +
-  geom_text(
-    aes(label = if_else(abs(change) >= 25, label, "")),
-    position = position_stack(vjust = 0.5),
-    color = "white",
-    size = 5,
-    fontface = "bold",
-    show.legend = FALSE
-  ) +
-  geom_text(
-    data = sector_totals,
-    aes(sector, y, label = label),
-    inherit.aes = FALSE,
-    color = "#2c3254",
-    size = 5.4,
-    fontface = "bold"
-  ) +
-  scale_fill_manual(values = c("Men" = "#2c3254", "Women" = "#ff8361")) +
-  scale_y_continuous(
-    labels = label_number(big.mark = ",", suffix = "k"),
-    expand = expansion(mult = c(0.08, 0.14))
-  ) +
-  coord_flip() +
-  theme_esp(base_size = 16) +
-  theme(
-    legend.position = "top",
-    plot.title = element_text(size = 24, face = "bold"),
-    plot.subtitle = element_text(size = 15),
-    panel.grid.major.x = element_line(color = "grey82"),
-    panel.grid.major.y = element_blank()
-  ) +
-  labs(
-    title = "Job Growth Since December 2024, by Sector and Gender",
-    subtitle = paste0(
-      "Seasonally adjusted CES employment, in thousands. Change from Dec. 2024 to ",
-      format(sector_last_month, "%b %Y"),
-      ".\nState/local combines state and local government. ",
-      format(sector_last_month, "%b %Y"),
-      " is the latest month with complete gender detail."
-    ),
-    x = "",
-    y = "",
-    caption = "BLS CES. Mike Konczal, Economic Security Project."
+      plot.subtitle = element_text(size = 14, color = positive_color),
+      plot.caption = element_text(size = 10, color = "grey40"),
+      plot.background = element_rect(fill = "#f4f2e4", color = NA)
+    )
   )
 
 ggsave(
-  "graphics/03c_gender_sector_growth.png",
+  "graphics/03c_prime_age_lfp_epop.png",
+  plot = prime_combined,
   dpi = "retina",
-  width = 12,
-  height = 7.5,
+  width = 16,
+  height = 6.5,
   units = "in"
 )
+
+prime_lfp_plot
+prime_epop_plot
+prime_combined
