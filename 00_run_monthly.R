@@ -75,7 +75,6 @@ source("10_flows_4_types.R")
 source("11_unemployment_durations.R")
 source("12_where_unrate_increased.R")
 
-
 ces_data <- getBLSFiles("ces", "rortybomb@gmail.com")
 ces_data$data_type_code_org <- ces_data$data_type_code
 ces_data$data_type_code <- as.numeric(ces_data$data_type_code)
@@ -83,4 +82,4 @@ ces_data$data_type_code <- as.numeric(ces_data$data_type_code)
 # Two calls that use ces.
 source("13_cyclical_industries.R")
 make_jobs_chart(ces_data)
-source("98_revisions_estimate.R")
+#source("98_revisions_estimate.R")

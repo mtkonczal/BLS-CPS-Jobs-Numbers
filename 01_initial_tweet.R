@@ -317,10 +317,14 @@ ggsave(
 
 # ── Generate tweet text ──────────────────────────────────────────────────
 
-# Revisions
+# Revisions. BLS reports the combined revision as previously published vs.
+# current, i.e. only the revision booked in *this* release. For the month
+# getting its third estimate that is 3rd-minus-2nd; for the month getting its
+# second it is 2nd-minus-1st. Using the cumulative 3rd-minus-1st double-counts
+# the revision the prior release already reported.
 rev_value <- revisions_df %>%
   mutate(
-    rev_value = coalesce(sa_rev_3rd_minus_1st, sa_rev_2nd_minus_1st)
+    rev_value = coalesce(sa_rev_3rd_minus_2nd, sa_rev_2nd_minus_1st)
   ) %>%
   filter(!is.na(rev_value)) %>%
   arrange(date) %>%

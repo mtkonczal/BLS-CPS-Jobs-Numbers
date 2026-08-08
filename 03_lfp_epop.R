@@ -231,7 +231,7 @@ prime_combined <- prime_age_chart(
     subtitle_size = 12
   ) +
   plot_annotation(
-    title = "Prime-Age Participation and Employment Both Fell in the Latest Month",
+    title = "Prime-Age Participation and Employment Both Fell in Recent Months",
     subtitle = "Ages 25-54. A falling participation rate can hold the unemployment rate down even as employment drops.",
     caption = prime_caption,
     theme = theme(

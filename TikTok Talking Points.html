@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>July 2026 Jobs Report: Talking Points and TikTok Script</title>
+<style>
+  :root{
+    --bg:#f4f2e4;
+    --navy:#2c3254;
+    --orange:#ff8361;
+    --green:#70ad8f;
+    --teal:#1c7c74;
+    --ink:#1e2136;
+    --muted:#6b6f85;
+    --rule:#d8d5c2;
+    --card:#fbfaf3;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:36px 24px 80px}
+
+  header h1{
+    font-size:34px;line-height:1.15;margin:0 0 6px;color:var(--navy);
+    letter-spacing:-0.02em;
+  }
+  header .sub{color:var(--muted);font-size:15px;margin:0 0 4px}
+  header .stamp{color:var(--muted);font-size:13px;font-style:italic;margin:0}
+
+  /* key numbers strip */
+  .strip{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:1px;background:var(--rule);border:1px solid var(--rule);
+    margin:24px 0 28px;border-radius:6px;overflow:hidden;
+  }
+  .strip div{background:var(--card);padding:12px 14px}
+  .strip .n{font-size:21px;font-weight:700;color:var(--navy);letter-spacing:-0.01em}
+  .strip .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:3px}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;border-bottom:2px solid var(--rule);margin-bottom:28px}
+  .tabs button{
+    appearance:none;border:none;background:none;cursor:pointer;
+    font:inherit;font-size:15px;font-weight:600;color:var(--muted);
+    padding:11px 20px;border-bottom:3px solid transparent;margin-bottom:-2px;
+    transition:color .12s;
+  }
+  .tabs button:hover{color:var(--navy)}
+  .tabs button[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--navy)}
+  .panel[hidden]{display:none}
+
+  h2.section{
+    font-size:13px;text-transform:uppercase;letter-spacing:.09em;
+    margin:34px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--rule);
+  }
+  h2.good{color:var(--teal)}
+  h2.bad{color:#c4502f}
+  h2.section:first-child{margin-top:0}
+
+  ol{list-style:none;counter-reset:pt;padding:0;margin:0}
+  ol li{
+    counter-increment:pt;position:relative;padding:0 0 0 42px;margin:0 0 18px;
+  }
+  ol li::before{
+    content:counter(pt);position:absolute;left:0;top:1px;
+    width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;color:#fff;
+  }
+  .good li::before{background:var(--teal)}
+  .bad li::before{background:var(--orange)}
+  ol li b{color:var(--navy)}
+  ol li .ev{display:block;color:var(--muted);font-size:14px;margin-top:3px}
+
+  .note{
+    background:var(--card);border-left:3px solid var(--navy);
+    padding:14px 18px;margin:26px 0 0;font-size:14px;color:var(--muted);border-radius:0 4px 4px 0;
+  }
+  .note b{color:var(--navy)}
+
+  /* script */
+  .hooks{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:18px 20px;margin-bottom:26px}
+  .hooks p{margin:0 0 10px;font-size:14px}
+  .hooks p:last-child{margin-bottom:0}
+  .hooks .lbl{font-weight:700;color:var(--navy)}
+
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-bottom:8px}
+  th{
+    text-align:left;background:var(--navy);color:#fff;font-size:11px;
+    text-transform:uppercase;letter-spacing:.06em;padding:9px 12px;font-weight:600;
+  }
+  td{padding:12px;border-bottom:1px solid var(--rule);vertical-align:top}
+  tr:nth-child(even) td{background:rgba(255,255,255,.45)}
+  td.t{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700;color:var(--navy);width:64px}
+  td.vis{width:23%;color:var(--muted);font-size:13px}
+  td.vo{width:44%}
+  td.ost{width:23%;font-size:12.5px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.02em}
+  .beat{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--orange);font-weight:700;display:block;margin-bottom:3px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:26px}
+  .box{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:18px 20px}
+  .box h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--navy)}
+  .box ul{margin:0;padding-left:18px;font-size:14px}
+  .box li{margin-bottom:7px}
+  .cap{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:var(--bg);padding:12px;border-radius:4px;border:1px solid var(--rule)}
+
+  @media (max-width:760px){
+    .grid2{grid-template-columns:1fr}
+    table,thead,tbody,th,td,tr{display:block}
+    thead{display:none}
+    td{border:none;padding:4px 0}
+    tr{border-bottom:1px solid var(--rule);padding:14px 0}
+    td.t,td.vis,td.vo,td.ost{width:auto}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>July 2026 Jobs Report</h1>
+  <p class="sub">Talking points for both sides of the argument, plus a TikTok script.</p>
+  <p class="stamp">Released Friday, August 7, 2026. Prepared August 8, 2026. Mike Konczal, Economic Security Project.</p>
+</header>
+
+<div class="strip">
+  <div><div class="n">&minus;23k</div><div class="l">Payrolls</div></div>
+  <div><div class="n">+30k</div><div class="l">Private</div></div>
+  <div><div class="n">&minus;53k</div><div class="l">Government</div></div>
+  <div><div class="n">4.09%</div><div class="l">Unemployment</div></div>
+  <div><div class="n">&minus;103k</div><div class="l">May+Jun revisions</div></div>
+  <div><div class="n">61.4%</div><div class="l">Participation</div></div>
+  <div><div class="n">3.2%</div><div class="l">Wages y/y</div></div>
+  <div><div class="n">34k</div><div class="l">12-mo avg</div></div>
+</div>
+
+<div class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" aria-controls="p1" id="t1">Talking Points</button>
+  <button role="tab" aria-selected="false" aria-controls="p2" id="t2">TikTok Script</button>
+</div>
+
+<!-- ============ TAB 1 ============ -->
+<section class="panel" id="p1" role="tabpanel" aria-labelledby="t1">
+
+  <h2 class="section good">The case that this was an okay number</h2>
+  <ol class="good">
+    <li><b>The private sector added jobs. The whole negative headline is government.</b>
+      <span class="ev">Private payrolls +30k. Government &minus;53k, of which local government is &minus;57k and local government education alone is roughly &minus;50k.</span></li>
+
+    <li><b>And that government number is probably a seasonal adjustment misfire.</b>
+      <span class="ev">Indeed's Hiring Lab attributes the local education drop to "a misfire in the seasonal adjustment process or a shift in typical hiring timelines." Summer school-calendar timing is the single most error-prone month in the series. Expect some of it back.</span></li>
+
+    <li><b>Unemployment fell to 4.09%, the lowest reading in about two years.</b>
+      <span class="ev">Down from the 4.54% peak in October 2025, and lower in five of the last six months.</span></li>
+
+    <li><b>Unemployment is exactly where it was in December 2024. Zero change in nineteen months.</b>
+      <span class="ev">A labor market that has spent a year and a half not deteriorating is a soft labor market, not a collapsing one.</span></li>
+
+    <li><b>The Sahm rule is nowhere near triggering.</b>
+      <span class="ev">With unemployment at a two-year low, the current three-month average is the lowest of the past twelve months. The indicator reads about zero against a 0.50 point recession threshold.</span></li>
+
+    <li><b>Prime-age participation and employment both went up.</b>
+      <span class="ev">Ages 25 to 54: participation +0.1pp to 83.4%, employment-population +0.2pp to 80.4%. That is 0.9pp and 0.5pp above their 2019 averages. The scary headline employment-population ratio, 58.9%, "lowest since 2014," is Baby Boomers retiring, not workers giving up.</span></li>
+
+    <li><b>Layoffs went down, not up.</b>
+      <span class="ev">The monthly flow from employed to unemployed fell to 0.75% of the labor force, the lowest in the 2024 to 2026 window. Firms are hiring cautiously. They are not firing.</span></li>
+
+    <li><b>The unemployment that did appear is the reversible kind.</b>
+      <span class="ev">Temporary layoffs rose 153k to 921k. That is the category that mechanically unwinds when plants restart and school calendars normalize, unlike permanent job losers.</span></li>
+
+    <li><b>More than half of industries are still adding jobs, and breadth is improving.</b>
+      <span class="ev">The one-month diffusion index is 52%, 53% on a three-month basis, up from roughly 45% in mid-2025.</span></li>
+
+    <li><b>Construction added 22k with the Fed at 3.50 to 3.75%.</b>
+      <span class="ev">The most rate-sensitive industry in the data is hiring. Cyclically sensitive industries as a group are at their least-negative since 2024. Unemployment duration also fell this month, average weeks from about 26.5 to 24.9.</span></li>
+  </ol>
+
+  <h2 class="section bad">The case that it was genuinely bad</h2>
+  <ol class="bad">
+    <li><b>The economy lost jobs, and it was not close.</b>
+      <span class="ev">&minus;23k against a consensus of +83k to +95k. That is a miss of more than 100,000.</span></li>
+
+    <li><b>The revisions were worse than the headline.</b>
+      <span class="ev">May cut 66k down to 63k. June cut 37k down to 20k. Combined &minus;103k. And it is a pattern, not an accident: February, May and June have all been revised down repeatedly. The real-time number you get on jobs day is systematically too optimistic right now.</span></li>
+
+    <li><b>The twelve-month average is 34,000 jobs a month.</b>
+      <span class="ev">Somewhere between 60k and 100k is roughly what you need to absorb population growth. The economy has been running below stall speed for a year.</span></li>
+
+    <li><b>Strip out health care and the economy is shrinking.</b>
+      <span class="ev">Health care and social assistance is 175% of job growth over the past year, and 186% since January 2025. Every other industry combined is &minus;236k over twelve months. One largely publicly financed sector is carrying the entire labor market.</span></li>
+
+    <li><b>Unemployment fell for the wrong reason.</b>
+      <span class="ev">Household employment &minus;87k. The labor force shrank by 264k. Participation dropped to 61.4%, the lowest in more than five years, from 62.2% a year ago. When people stop looking, the unemployment rate improves on paper while the situation gets worse.</span></li>
+
+    <li><b>Real wages are going backwards.</b>
+      <span class="ev">Average hourly earnings are up 3.2% year over year against 3.5% CPI inflation. The workweek is stuck at 34.3 hours, so there is no hours offset. Workers are losing purchasing power.</span></li>
+
+    <li><b>Long-term unemployment is entrenching.</b>
+      <span class="ev">1.8 million people have been out of work 27 weeks or more, 25.5% of all unemployed. Average duration is 24.9 weeks, well above the 2024 average of about 21.7. The cost of losing a job right now is much higher than it was two years ago.</span></li>
+
+    <li><b>Leisure and hospitality shed 40k.</b>
+      <span class="ev">That is the discretionary consumption canary. It is the first place households cut, and it is the industry that employs the workers with the least savings buffer.</span></li>
+
+    <li><b>The damage is moving up the income ladder.</b>
+      <span class="ev">Since December 2024, unemployment is up 0.2pp for workers with a BA or more, up 0.2pp for some college, up 0.5pp for Asian workers and up 0.6pp for 45 to 54 year olds. Overall unemployment is flat because less-credentialed and younger workers improved while white-collar and mid-career workers got worse. This is a bad kind of stability.</span></li>
+
+    <li><b>There is no cavalry coming.</b>
+      <span class="ev">Inflation is 3.5%, the Fed is at 3.50 to 3.75%, and markets were pricing a 55% chance of a rate <em>hike</em> in September before this report. The Fed cannot cut its way out of a labor slowdown while it is fighting an energy-driven price shock. That is the stagflation box, and it is why "bad news is good news" does not work here.</span></li>
+  </ol>
+
+  <div class="note">
+    <b>Two things to fix before you post.</b><br>
+    1. <s>Revisions</s> <b>Fixed.</b> <code>tweet.txt</code> said "revised down 146k," which added May's cumulative first-to-third revision (&minus;109k) to June's first-to-second (&minus;37k). The BLS convention is previously published versus current: (63 &minus; 129) + (20 &minus; 57) = <b>&minus;103k</b>. Corrected in <code>01_initial_tweet.R</code> and in <code>tweet.txt</code>.<br>
+    2. <code>graphics/02f_sahm_rule.png</code> did not update. The line stops around September 2025 while the axis runs to July 2026. The Sahm point above is computed from the unemployment path, not from that chart, so do not post the chart as-is.
+  </div>
+</section>
+
+<!-- ============ TAB 2 ============ -->
+<section class="panel" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+
+  <div class="hooks">
+    <p><span class="lbl">Format:</span> 9:16 vertical, 55 to 65 seconds. Burned-in captions, always. No intro, no "hey guys." The take lands in the first two seconds or the video is dead.</p>
+    <p><span class="lbl">Hook A (use this one):</span> "America lost jobs last month, and I am not panicking. Here is what everybody got wrong."</p>
+    <p><span class="lbl">Hook B:</span> "Every headline today said the jobs report was a disaster. I spent this morning inside the actual data. They are reading it wrong."</p>
+    <p><span class="lbl">Hook C:</span> "Negative twenty-three thousand jobs. Terrifying number. Now let me show you the one line item that explains all of it."</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Time</th><th>Shot / visual</th><th>What you say</th><th>On-screen text</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="t">0:00</td>
+        <td class="vis"><span class="beat">Hook</span>Tight on you, mid-sentence energy. Already talking when the frame appears.</td>
+        <td class="vo">"America lost jobs last month, and I'm not panicking. Here's what everybody got wrong."</td>
+        <td class="ost">&minus;23,000 JOBS</td>
+      </tr>
+      <tr>
+        <td class="t">0:04</td>
+        <td class="vis"><span class="beat">Stakes</span>Quick cut, slightly wider. Hold up two fingers.</td>
+        <td class="vo">"Minus twenty-three thousand. Wall Street expected plus eighty-three. So yeah, ugly headline. But look at where the loss actually came from."</td>
+        <td class="ost">EXPECTED: +83k</td>
+      </tr>
+      <tr>
+        <td class="t">0:11</td>
+        <td class="vis"><span class="beat">The reveal</span>Full-screen graphic. Two bars only: PRIVATE +30, GOVERNMENT &minus;53. Nothing else on screen.</td>
+        <td class="vo">"The private sector added thirty thousand jobs. Government lost fifty-three thousand. And basically all of that is local school districts."</td>
+        <td class="ost">PRIVATE +30k<br>GOVERNMENT &minus;53k</td>
+      </tr>
+      <tr>
+        <td class="t">0:19</td>
+        <td class="vis"><span class="beat">Pattern interrupt</span>Cut back to you. Lean in. Slow down here, this is the money line.</td>
+        <td class="vo">"Local government education, down about fifty thousand, in July. When school hiring happens is a seasonal adjustment nightmare. Even Indeed's economists said this looks like a timing misfire. A chunk of it comes back next month."</td>
+        <td class="ost">SCHOOL CALENDAR<br>&ne; ECONOMY</td>
+      </tr>
+      <tr>
+        <td class="t">0:29</td>
+        <td class="vis"><span class="beat">Corroborate</span>Rapid-fire text stack, one line dropping in per beat. Keep it moving.</td>
+        <td class="vo">"And everything underneath it got better. Unemployment fell to four point one, lowest in two years. Prime-age employment went up. Construction added twenty-two thousand jobs with rates this high. And layoffs? Layoffs went down to their lowest level in the whole data set."</td>
+        <td class="ost">UNEMPLOYMENT 4.1%<br>PRIME-AGE UP<br>CONSTRUCTION +22k<br>LAYOFFS AT A LOW</td>
+      </tr>
+      <tr>
+        <td class="t">0:41</td>
+        <td class="vis"><span class="beat">The turn</span>Hard cut. Change your posture. This turn is what keeps people watching to the end.</td>
+        <td class="vo">"Now. I'm not telling you it's fine. Two things genuinely worry me. Take health care out and the economy has lost jobs over the past year. And wages are growing three point two while prices are growing three point five, so you're falling behind."</td>
+        <td class="ost">BUT&hellip;<br>WAGES 3.2% vs PRICES 3.5%</td>
+      </tr>
+      <tr>
+        <td class="t">0:52</td>
+        <td class="vis"><span class="beat">Land it</span>Back to tight. Deliver flat and certain, no hedging in the voice.</td>
+        <td class="vo">"So it's a slow economy. It is not a collapsing one. And the difference matters, because one of those needs patience and the other needs an emergency."</td>
+        <td class="ost">SLOW &ne; COLLAPSING</td>
+      </tr>
+      <tr>
+        <td class="t">0:59</td>
+        <td class="vis"><span class="beat">Comment bait</span>Do not smile out. Hold the frame half a beat and cut, so it loops clean into the hook.</td>
+        <td class="vo">"Tell me which one you think it is."</td>
+        <td class="ost">WHICH IS IT?</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="grid2">
+    <div class="box">
+      <h3>Why this structure works</h3>
+      <ul>
+        <li><b>Contrarian hook, no preamble.</b> The first frame states a position against the consensus. Retention is won or lost in two seconds.</li>
+        <li><b>One number per beat.</b> Never two statistics on screen at once. The audience is watching on a phone with the sound half off.</li>
+        <li><b>Cut every 5 to 8 seconds.</b> Framing change, graphic, or posture change. Every cut resets attention.</li>
+        <li><b>The turn at 0:41.</b> Conceding real weakness at the two-thirds mark does two things: it buys credibility with skeptics, and it stops people from swiping right before the payoff.</li>
+        <li><b>Question ending, not a CTA.</b> "Tell me which one you think it is" outperforms "like and follow." Comments are the ranking signal.</li>
+        <li><b>Loop-friendly.</b> No sign-off. The last frame cuts straight back into "America lost jobs last month," which reads as continuous on replay.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Production notes</h3>
+      <ul>
+        <li><b>Speak about 15% faster than feels natural</b>, but put a full half-beat pause before "layoffs went down."</li>
+        <li><b>Only one real chart.</b> The two-bar private-versus-government graphic. Everything else is text on solid color.</li>
+        <li><b>Rebuild that graphic for vertical.</b> The <code>jobs_chart.png</code> table is unreadable at 9:16. Two bars, huge labels, nothing else.</li>
+        <li><b>Captions burned in.</b> Auto-captions mangle "prime-age" and "seasonal adjustment." Fix those two by hand.</li>
+        <li><b>Say "four point one," not "four point zero nine."</b> Precision reads as hedging on camera.</li>
+        <li><b>No music under the turn</b> at 0:41. Dropping the bed makes the concession land as sincere.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box" style="margin-top:24px">
+    <h3>Caption</h3>
+    <p class="cap">The economy lost 23,000 jobs in July and the entire loss was local school districts in a month when seasonal adjustment always misfires. Private employers added 30k. Unemployment hit a 2-year low. Layoffs fell. It's a slow economy, not a collapsing one. The real problem is wages growing slower than prices.<br><br>#economy #jobsreport #economics #inflation #wages #labormarket #fyp</p>
+  </div>
+
+  <div class="note">
+    <b>One thing not to say.</b> Do not claim unemployment fell because people found jobs. It did not. Household employment fell 87k and the labor force shrank 264k. Your defensible version is the one in the script: <em>prime-age</em> participation and employment both rose, and the headline participation decline is dominated by retirements. If a commenter pushes on 61.4% participation, that is the answer, and it is a real answer.
+  </div>
+</section>
+
+<script>
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(o => {
+      const sel = o === t;
+      o.setAttribute('aria-selected', sel);
+      document.getElementById(o.getAttribute('aria-controls')).hidden = !sel;
+    });
+    window.scrollTo({top:0, behavior:'smooth'});
+  }));
+</script>
+</div>
+</body>
+</html>
